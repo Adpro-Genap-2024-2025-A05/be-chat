@@ -3,6 +3,10 @@
 - BeChat adalah microservice untuk menangani fitur percakapan (chat) antara dua pengguna, seperti pasien (Pacillians) dan dokter (CareGiver)
 ---
 
+## Deployment
+
+Link: [BE-Chat Deployment](https://protective-shalna-be-chat-bccf0946.koyeb.app/)
+
 ## 🚀 Fitur Utama
 
 Melakukan chat antara pengguna dan dokter,  terdiri dari use cases sebagai berikut.
