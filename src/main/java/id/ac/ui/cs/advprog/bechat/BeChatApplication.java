@@ -12,9 +12,4 @@ public class BeChatApplication {
     public static void main(String[] args) {
         SpringApplication.run(BeChatApplication.class, args);
     }
-
-    @Bean
-    public CommandLineRunner testRepo(ChatMessageRepository repo) {
-        return args -> System.out.println(" ChatMessageRepository injected successfully: " + repo);
-    }
 }
