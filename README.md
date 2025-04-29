@@ -5,7 +5,7 @@
 
 ## Deployment
 
-Link: [BE-Chat Deployment](https://protective-shalna-be-chat-bccf0946.koyeb.app/)
+Link: [BE-Chat Deployment](http://54.158.239.145/)
 Link: [Postman API](https://www.postman.com/api-ristek/workspace/adprochat/collection/38268031-7f8b0afc-a091-4e9d-9439-8d1736072df7?action=share&creator=38268031)
 
 ## 🚀 Fitur Utama
