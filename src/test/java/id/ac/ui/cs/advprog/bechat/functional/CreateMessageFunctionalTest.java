@@ -1,18 +1,17 @@
-package id.ac.ui.cs.advprog.bechat.controller;
+package id.ac.ui.cs.advprog.bechat.functional;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import id.ac.ui.cs.advprog.bechat.dto.SendMessageRequest;
-import id.ac.ui.cs.advprog.bechat.model.builder.ChatMessage;
 import id.ac.ui.cs.advprog.bechat.model.builder.ChatSession;
 import id.ac.ui.cs.advprog.bechat.repository.ChatMessageRepository;
 import id.ac.ui.cs.advprog.bechat.repository.ChatSessionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -21,18 +20,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
-class ChatControllerFunctionalTest {
+class CreateMessageFunctionalTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @Autowired
-    private ChatMessageRepository chatMessageRepository;
+    private ChatSessionRepository chatSessionRepository;
 
     @Autowired
-    private ChatSessionRepository chatSessionRepository;
+    private ChatMessageRepository chatMessageRepository;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -46,6 +45,7 @@ class ChatControllerFunctionalTest {
         chatSessionRepository.deleteAll();
 
         senderId = UUID.randomUUID();
+
         session = new ChatSession();
         session.setId(UUID.randomUUID());
         session.setUser1Id(senderId);
@@ -55,18 +55,19 @@ class ChatControllerFunctionalTest {
     }
 
     @Test
-    void testSendMessage_shouldSaveAndReturnMessage() throws Exception {
+    void whenSendMessage_shouldSaveMessageToRepositoryAndReturnIt() throws Exception {
         SendMessageRequest request = new SendMessageRequest();
         request.setSessionId(session.getId());
         request.setSenderId(senderId);
-        request.setContent("Halo functional test");
+        request.setContent("ini create message");
 
-        mockMvc.perform(post("/chat/send")
+        mockMvc.perform(post("/api/v1/chat/send")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content").value("Halo functional test"))
-                .andExpect(jsonPath("$.senderId").value(senderId.toString()));
+                .andExpect(jsonPath("$.content").value("ini create message"))
+                .andExpect(jsonPath("$.senderId").value(senderId.toString()))
+                .andExpect(jsonPath("$.session.id").value(session.getId().toString()));
 
         assertThat(chatMessageRepository.findAll()).hasSize(1);
     }
