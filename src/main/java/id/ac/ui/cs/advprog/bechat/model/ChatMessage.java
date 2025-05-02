@@ -6,6 +6,8 @@ import lombok.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -17,6 +19,8 @@ public class ChatMessage {
     private UUID id;
 
     @ManyToOne
+    @JoinColumn(name = "session_id", nullable = false)
+    @JsonBackReference
     private ChatSession session;
 
     private UUID senderId;
@@ -26,3 +30,4 @@ public class ChatMessage {
     private boolean edited;
     private boolean deleted;
 }
+

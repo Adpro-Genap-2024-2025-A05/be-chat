@@ -38,4 +38,9 @@ public class ChatSessionServiceImpl implements ChatSessionService {
     public List<ChatSession> getSessionsByUser(UUID userId) {
         return chatSessionRepository.findByUser1IdOrUser2Id(userId, userId);
     }
+
+    @Override
+    public void deleteSession(UUID sessionId) {
+        chatSessionRepository.deleteById(sessionId);
+}
 }

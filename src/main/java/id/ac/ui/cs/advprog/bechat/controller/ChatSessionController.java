@@ -35,4 +35,10 @@ public class ChatSessionController {
     public ResponseEntity<List<ChatSession>> getSessionsByUser(@PathVariable UUID userId) {
         return ResponseEntity.ok(chatSessionService.getSessionsByUser(userId));
     }
+
+    @DeleteMapping("/{sessionId}")
+    public ResponseEntity<Void> deleteSession(@PathVariable UUID sessionId) {
+        chatSessionService.deleteSession(sessionId);
+        return ResponseEntity.noContent().build();
+    }
 }
