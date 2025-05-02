@@ -3,7 +3,7 @@ package id.ac.ui.cs.advprog.bechat.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import id.ac.ui.cs.advprog.bechat.dto.EditMessageRequest;
 import id.ac.ui.cs.advprog.bechat.dto.SendMessageRequest;
-import id.ac.ui.cs.advprog.bechat.model.builder.ChatMessage;
+import id.ac.ui.cs.advprog.bechat.model.ChatMessage;
 import id.ac.ui.cs.advprog.bechat.service.ChatService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

@@ -1,7 +1,7 @@
 package id.ac.ui.cs.advprog.bechat.controller;
 
 import id.ac.ui.cs.advprog.bechat.dto.CreateSessionRequest;
-import id.ac.ui.cs.advprog.bechat.model.builder.ChatSession;
+import id.ac.ui.cs.advprog.bechat.model.ChatSession;
 import id.ac.ui.cs.advprog.bechat.service.ChatSessionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

@@ -1,7 +1,8 @@
 package id.ac.ui.cs.advprog.bechat.functional;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import id.ac.ui.cs.advprog.bechat.model.builder.ChatSession;
+
+import id.ac.ui.cs.advprog.bechat.model.ChatSession;
 import id.ac.ui.cs.advprog.bechat.repository.ChatSessionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

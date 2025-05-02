@@ -2,7 +2,7 @@ package id.ac.ui.cs.advprog.bechat.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import id.ac.ui.cs.advprog.bechat.dto.CreateSessionRequest;
-import id.ac.ui.cs.advprog.bechat.model.builder.ChatSession;
+import id.ac.ui.cs.advprog.bechat.model.ChatSession;
 import id.ac.ui.cs.advprog.bechat.service.ChatSessionService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

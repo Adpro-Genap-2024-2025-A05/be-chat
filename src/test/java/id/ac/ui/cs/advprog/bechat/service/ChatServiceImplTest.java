@@ -1,8 +1,8 @@
 package id.ac.ui.cs.advprog.bechat.service;
 
 import id.ac.ui.cs.advprog.bechat.dto.SendMessageRequest;
-import id.ac.ui.cs.advprog.bechat.model.builder.ChatMessage;
-import id.ac.ui.cs.advprog.bechat.model.builder.ChatSession;
+import id.ac.ui.cs.advprog.bechat.model.ChatMessage;
+import id.ac.ui.cs.advprog.bechat.model.ChatSession;
 import id.ac.ui.cs.advprog.bechat.repository.ChatMessageRepository;
 import id.ac.ui.cs.advprog.bechat.repository.ChatSessionRepository;
 import org.junit.jupiter.api.BeforeEach;

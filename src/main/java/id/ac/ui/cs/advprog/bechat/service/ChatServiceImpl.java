@@ -1,7 +1,7 @@
 package id.ac.ui.cs.advprog.bechat.service;
 import lombok.RequiredArgsConstructor;
-import id.ac.ui.cs.advprog.bechat.model.builder.ChatMessage;
-import id.ac.ui.cs.advprog.bechat.model.builder.ChatSession;
+import id.ac.ui.cs.advprog.bechat.model.ChatMessage;
+import id.ac.ui.cs.advprog.bechat.model.ChatSession;
 import id.ac.ui.cs.advprog.bechat.repository.ChatMessageRepository;
 import id.ac.ui.cs.advprog.bechat.repository.ChatSessionRepository;
 import id.ac.ui.cs.advprog.bechat.strategy.MessageActionStrategy;

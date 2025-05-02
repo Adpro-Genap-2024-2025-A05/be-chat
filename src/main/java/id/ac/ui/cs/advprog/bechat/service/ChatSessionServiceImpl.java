@@ -1,6 +1,6 @@
 package id.ac.ui.cs.advprog.bechat.service;
 
-import id.ac.ui.cs.advprog.bechat.model.builder.ChatSession;
+import id.ac.ui.cs.advprog.bechat.model.ChatSession;
 import id.ac.ui.cs.advprog.bechat.repository.ChatSessionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

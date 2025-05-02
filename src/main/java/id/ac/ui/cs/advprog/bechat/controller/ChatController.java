@@ -2,7 +2,7 @@ package id.ac.ui.cs.advprog.bechat.controller;
 
 import id.ac.ui.cs.advprog.bechat.dto.EditMessageRequest;
 import id.ac.ui.cs.advprog.bechat.dto.SendMessageRequest;
-import id.ac.ui.cs.advprog.bechat.model.builder.ChatMessage;
+import id.ac.ui.cs.advprog.bechat.model.ChatMessage;
 import id.ac.ui.cs.advprog.bechat.service.ChatService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

@@ -1,4 +1,4 @@
-package id.ac.ui.cs.advprog.bechat.model.builder;
+package id.ac.ui.cs.advprog.bechat.model;
 
 import jakarta.persistence.*;
 import lombok.*;
