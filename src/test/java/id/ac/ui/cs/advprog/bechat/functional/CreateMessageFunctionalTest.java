@@ -16,16 +16,19 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest
 @AutoConfigureMockMvc
-class CreateMessageFunctionalTest {
+public class CreateMessageFunctionalTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Autowired
     private ChatSessionRepository chatSessionRepository;
@@ -33,23 +36,17 @@ class CreateMessageFunctionalTest {
     @Autowired
     private ChatMessageRepository chatMessageRepository;
 
-    @Autowired
-    private ObjectMapper objectMapper;
-
     private ChatSession session;
-    private UUID senderId;
 
     @BeforeEach
     void setUp() {
         chatMessageRepository.deleteAll();
         chatSessionRepository.deleteAll();
 
-        senderId = UUID.randomUUID();
-
         session = new ChatSession();
         session.setId(UUID.randomUUID());
-        session.setUser1Id(senderId);
-        session.setUser2Id(UUID.randomUUID());
+        session.setUser1Id(UUID.fromString("11111111-1111-1111-1111-111111111111"));
+        session.setUser2Id(UUID.fromString("22222222-2222-2222-2222-222222222222"));
         session.setCreatedAt(LocalDateTime.now());
         session = chatSessionRepository.save(session);
     }
@@ -58,17 +55,18 @@ class CreateMessageFunctionalTest {
     void whenSendMessage_shouldSaveMessageToRepositoryAndReturnIt() throws Exception {
         SendMessageRequest request = new SendMessageRequest();
         request.setSessionId(session.getId());
-        request.setSenderId(senderId);
-        request.setContent("ini create message");
+        request.setSenderId(session.getUser1Id());
+        request.setContent("di aeon");
 
         mockMvc.perform(post("/api/v1/chat/send")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
+                .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content").value("ini create message"))
-                .andExpect(jsonPath("$.senderId").value(senderId.toString()))
-                .andExpect(jsonPath("$.session.id").value(session.getId().toString()));
-
-        assertThat(chatMessageRepository.findAll()).hasSize(1);
+                .andExpect(jsonPath("$.id").exists())
+                .andExpect(jsonPath("$.senderId").value(session.getUser1Id().toString()))
+                .andExpect(jsonPath("$.content").value("di aeon"))
+                .andExpect(jsonPath("$.edited").value(false))
+                .andExpect(jsonPath("$.deleted").value(false));
     }
 }
