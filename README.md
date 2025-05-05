@@ -83,8 +83,9 @@ Mudah menambahkan strategi baru, seperti PinMessageStrategy untuk fitur "Pin Mes
 |--------|-----------------------------------------------------------------------|-----------------------------------------------------|
 | POST   | `/chat/session/create`                                                | Membuat sesi chat antara dua user                   |
 | POST   | `/chat/send`                                                          | Mengirim atau membuat pesan baru                    |
-| GET    | `/chat/session/find?user1={userId1}&user2={userId2}`                 | Mencari sesi antara dua pengguna                    |
+| GET    | `/chat/session/find?user1={userId1}&user2={userId2}`                  | Mencari sesi antara dua pengguna                    |
 | GET    | `/chat/session/user/{userId}`                                         | Mencari semua sesi chat yang dimiliki seorang user  |
 | GET    | `/chat/session/{sessionId}`                                           | Mendapatkan semua pesan dalam satu sesi chat        |
 | PUT    | `/chat/message/{messageId}`                                           | Mengedit isi pesan berdasarkan `messageId`          |
 | DELETE | `/chat/message/{messageId}`                                           | Menghapus pesan berdasarkan `messageId`             |
+| DELETE | `/chat/session/{sessionId}`                                           | Menghapus session berdasarkan `sessionId`           |
