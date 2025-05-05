@@ -1,17 +1,17 @@
 package id.ac.ui.cs.advprog.bechat.service;
-import lombok.RequiredArgsConstructor;
+
+import id.ac.ui.cs.advprog.bechat.dto.SendMessageRequest;
 import id.ac.ui.cs.advprog.bechat.model.ChatMessage;
 import id.ac.ui.cs.advprog.bechat.model.ChatSession;
 import id.ac.ui.cs.advprog.bechat.repository.ChatMessageRepository;
 import id.ac.ui.cs.advprog.bechat.repository.ChatSessionRepository;
-import id.ac.ui.cs.advprog.bechat.strategy.MessageActionStrategy;
-import id.ac.ui.cs.advprog.bechat.strategy.EditMessageStrategy;
-import id.ac.ui.cs.advprog.bechat.strategy.DeleteMessageStrategy;
-import id.ac.ui.cs.advprog.bechat.dto.SendMessageRequest;
-import java.util.UUID;
-import java.util.List;
-import java.time.LocalDateTime;
+
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
 
 @RequiredArgsConstructor
 @Service
@@ -47,9 +47,7 @@ public class ChatServiceImpl implements ChatService {
         ChatMessage message = chatMessageRepository.findById(messageId)
                 .orElseThrow(() -> new RuntimeException("Message not found"));
 
-        MessageActionStrategy strategy = new EditMessageStrategy();
-        strategy.process(message, newContent);
-
+        message.edit(newContent);
         return chatMessageRepository.save(message);
     }
 
@@ -58,9 +56,7 @@ public class ChatServiceImpl implements ChatService {
         ChatMessage message = chatMessageRepository.findById(messageId)
                 .orElseThrow(() -> new RuntimeException("Message not found"));
 
-        MessageActionStrategy strategy = new DeleteMessageStrategy();
-        strategy.process(message, null);
-
+        message.delete();
         return chatMessageRepository.save(message);
     }
 }

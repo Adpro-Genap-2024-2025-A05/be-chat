@@ -47,34 +47,8 @@ Aplikasi ini menggunakan pendekatan **Layered Architecture** yang memisahkan tan
 
 ## 💡 Design Pattern yang Digunakan
 
-### 🧠 Strategy Pattern
+### 🧠 State Pattern
 
-**Alasan Penggunaan:**  
-Strategy Pattern digunakan untuk menghindari logic `if-else` panjang dalam pengolahan pesan (misalnya: edit atau hapus). Dengan pola ini, setiap aksi terhadap pesan diwakili oleh strategi berbeda.
-
-**Implementasi:**
-- Interface: `MessageActionStrategy`
-- Strategi:
-  - `EditMessageStrategy` – mengubah konten & set `edited = true`
-  - `DeleteMessageStrategy` – ubah konten ke “Pesan telah dihapus” & set `deleted = true`
-
-**Manfaat:**
-1. Memisahkan logika bisnis setiap aksi
-- Setiap aksi (seperti mengirim, mengedit, atau menghapus pesan) diimplementasikan secara terpisah agar tidak tercampur dalam ChatServiceImpl, sehingga kode menjadi lebih terorganisir dan mudah dipelihara.
-
-2. Meningkatkan fleksibilitas dan skalabilitas kode
-- Pola ini memudahkan penambahan aksi atau fitur baru tanpa perlu mengubah kode yang sudah ada, sehingga meminimalkan risiko bug dan konflik.
-
-3. Menerapkan prinsip SOLID, khususnya:
-
-- Single Responsibility Principle (SRP):
-Setiap strategi bertanggung jawab hanya untuk satu jenis aksi, sehingga kode menjadi lebih modular dan mudah dipahami.
-
-- Open/Closed Principle (OCP):
-Struktur kode terbuka untuk perluasan (penambahan fitur baru), namun tertutup untuk modifikasi terhadap bagian yang sudah berjalan dengan baik.
-- contoh: 
-Mudah menambahkan strategi baru, seperti PinMessageStrategy untuk fitur "Pin Message", tanpa harus mengubah kode utama di ChatServiceImpl.
----
 
 ## 📦 API Endpoint
 
