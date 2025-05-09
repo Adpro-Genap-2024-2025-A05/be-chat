@@ -18,11 +18,17 @@ public class ChatSessionServiceImpl implements ChatSessionService {
 
     @Override
     public ChatSession createSession(UUID user1Id, UUID user2Id) {
+        Optional<ChatSession> existing = findSession(user1Id, user2Id);
+        if (existing.isPresent()) {
+            return existing.get();
+        }
+
         ChatSession session = new ChatSession();
         session.setId(UUID.randomUUID());
         session.setUser1Id(user1Id);
         session.setUser2Id(user2Id);
         session.setCreatedAt(LocalDateTime.now());
+
         return chatSessionRepository.save(session);
     }
 
@@ -39,8 +45,4 @@ public class ChatSessionServiceImpl implements ChatSessionService {
         return chatSessionRepository.findByUser1IdOrUser2Id(userId, userId);
     }
 
-    @Override
-    public void deleteSession(UUID sessionId) {
-        chatSessionRepository.deleteById(sessionId);
-}
 }

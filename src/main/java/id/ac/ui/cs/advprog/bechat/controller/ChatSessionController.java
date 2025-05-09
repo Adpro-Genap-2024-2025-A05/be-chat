@@ -1,44 +1,45 @@
 package id.ac.ui.cs.advprog.bechat.controller;
 
-import id.ac.ui.cs.advprog.bechat.dto.CreateSessionRequest;
+import id.ac.ui.cs.advprog.bechat.dto.*;
 import id.ac.ui.cs.advprog.bechat.model.ChatSession;
 import id.ac.ui.cs.advprog.bechat.service.ChatSessionService;
+import id.ac.ui.cs.advprog.bechat.service.TokenVerificationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("api/v1/chat/session")
+@RequestMapping("/chat/session")
 public class ChatSessionController {
 
     private final ChatSessionService chatSessionService;
-
-    @GetMapping("/find")
-    public ResponseEntity<ChatSession> findSession(@RequestParam UUID user1, @RequestParam UUID user2) {
-        Optional<ChatSession> sessionOpt = chatSessionService.findSession(user1, user2);
-        return sessionOpt.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
-    }
+    private final TokenVerificationService tokenService;
 
     @PostMapping("/create")
-    public ResponseEntity<ChatSession> createSession(@Valid @RequestBody CreateSessionRequest request) {
-        ChatSession session = chatSessionService.createSession(request.getUser1Id(), request.getUser2Id());
+    public ResponseEntity<ChatSession> createSession(
+            @Valid @RequestBody CreateSessionRequest request,
+            @RequestHeader("Authorization") String authHeader
+    ) {
+        UUID user1Id = tokenService.getUserIdFromToken(extractToken(authHeader));
+        ChatSession session = chatSessionService.createSession(user1Id, request.getUser2Id());
         return ResponseEntity.ok(session);
     }
 
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<List<ChatSession>> getSessionsByUser(@PathVariable UUID userId) {
+    @GetMapping("/user")
+    public ResponseEntity<List<ChatSession>> getSessionsForCurrentUser(
+            @RequestHeader("Authorization") String authHeader
+    ) {
+        UUID userId = tokenService.getUserIdFromToken(extractToken(authHeader));
         return ResponseEntity.ok(chatSessionService.getSessionsByUser(userId));
     }
 
-    @DeleteMapping("/{sessionId}")
-    public ResponseEntity<Void> deleteSession(@PathVariable UUID sessionId) {
-        chatSessionService.deleteSession(sessionId);
-        return ResponseEntity.noContent().build();
+
+    private String extractToken(String header) {
+        return header.replace("Bearer ", "");
     }
 }

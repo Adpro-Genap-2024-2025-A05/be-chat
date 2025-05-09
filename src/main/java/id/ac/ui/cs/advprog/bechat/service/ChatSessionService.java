@@ -10,7 +10,4 @@ public interface ChatSessionService {
     ChatSession createSession(UUID user1Id, UUID user2Id);
     Optional<ChatSession> findSession(UUID user1Id, UUID user2Id);
     List<ChatSession> getSessionsByUser(UUID userId);
-    void deleteSession(UUID sessionId);
-
 }
-
