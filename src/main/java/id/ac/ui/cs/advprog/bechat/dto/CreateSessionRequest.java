@@ -11,5 +11,5 @@ import java.util.UUID;
 public class CreateSessionRequest {
 
     @NotNull
-    private UUID user2Id;
+    private UUID caregiver;
 }

@@ -25,8 +25,8 @@ public class ChatSessionController {
             @Valid @RequestBody CreateSessionRequest request,
             @RequestHeader("Authorization") String authHeader
     ) {
-        UUID user1Id = tokenService.getUserIdFromToken(extractToken(authHeader));
-        ChatSession session = chatSessionService.createSession(user1Id, request.getUser2Id());
+        UUID pacilian = tokenService.getUserIdFromToken(extractToken(authHeader));
+        ChatSession session = chatSessionService.createSession(pacilian, request.getCaregiver());
         return ResponseEntity.ok(session);
     }
 

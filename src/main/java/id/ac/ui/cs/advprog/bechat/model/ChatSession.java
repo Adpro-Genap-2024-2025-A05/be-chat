@@ -20,8 +20,8 @@ public class ChatSession {
     @Id
     private UUID id;
 
-    private UUID user1Id;
-    private UUID user2Id;
+    private UUID pacilian;
+    private UUID caregiver;
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true)

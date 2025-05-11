@@ -7,7 +7,7 @@ import java.util.UUID;
 import id.ac.ui.cs.advprog.bechat.model.ChatSession;
 
 public interface ChatSessionService {
-    ChatSession createSession(UUID user1Id, UUID user2Id);
-    Optional<ChatSession> findSession(UUID user1Id, UUID user2Id);
+    ChatSession createSession(UUID pacilian, UUID caregiver);
+    Optional<ChatSession> findSession(UUID pacilian, UUID caregiver);
     List<ChatSession> getSessionsByUser(UUID userId);
 }

@@ -25,9 +25,7 @@ public class ChatServiceImpl implements ChatService {
         UUID senderId = tokenVerificationService.getUserIdFromToken(token);
         ChatSession session = chatSessionRepository.findById(dto.getSessionId())
                 .orElseThrow(() -> new RuntimeException("Session not found"));
-
-        // Authorization: hanya peserta session yang boleh kirim
-        if (!session.getUser1Id().equals(senderId) && !session.getUser2Id().equals(senderId)) {
+        if (!session.getPacilian().equals(senderId) && !session.getCaregiver().equals(senderId)) {
             throw new SecurityException("You are not part of this session.");
         }
 
@@ -48,7 +46,7 @@ public class ChatServiceImpl implements ChatService {
         UUID userId = tokenVerificationService.getUserIdFromToken(token);
         ChatSession session = getSessionById(sessionId);
 
-        if (!session.getUser1Id().equals(userId) && !session.getUser2Id().equals(userId)) {
+        if (!session.getPacilian().equals(userId) && !session.getCaregiver().equals(userId)) {
             throw new SecurityException("You do not have access to this session.");
         }
 

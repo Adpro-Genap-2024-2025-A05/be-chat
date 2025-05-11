@@ -17,32 +17,32 @@ public class ChatSessionServiceImpl implements ChatSessionService {
     private final ChatSessionRepository chatSessionRepository;
 
     @Override
-    public ChatSession createSession(UUID user1Id, UUID user2Id) {
-        Optional<ChatSession> existing = findSession(user1Id, user2Id);
+    public ChatSession createSession(UUID pacilian, UUID caregiver) {
+        Optional<ChatSession> existing = findSession(pacilian, caregiver);
         if (existing.isPresent()) {
             return existing.get();
         }
 
         ChatSession session = new ChatSession();
         session.setId(UUID.randomUUID());
-        session.setUser1Id(user1Id);
-        session.setUser2Id(user2Id);
+        session.setPacilian(pacilian);
+        session.setCaregiver(caregiver);
         session.setCreatedAt(LocalDateTime.now());
 
         return chatSessionRepository.save(session);
     }
 
     @Override
-    public Optional<ChatSession> findSession(UUID user1Id, UUID user2Id) {
+    public Optional<ChatSession> findSession(UUID pacilian, UUID caregiver) {
         return chatSessionRepository.findAll().stream()
-                .filter(s -> (s.getUser1Id().equals(user1Id) && s.getUser2Id().equals(user2Id)) ||
-                        (s.getUser1Id().equals(user2Id) && s.getUser2Id().equals(user1Id)))
+                .filter(s -> (s.getPacilian().equals(pacilian) && s.getCaregiver().equals(caregiver)) ||
+                        (s.getPacilian().equals(caregiver) && s.getCaregiver().equals(pacilian)))
                 .findFirst();
     }
 
     @Override
     public List<ChatSession> getSessionsByUser(UUID userId) {
-        return chatSessionRepository.findByUser1IdOrUser2Id(userId, userId);
+        return chatSessionRepository.findByPacilianOrCaregiver(userId, userId);
     }
 
 }
