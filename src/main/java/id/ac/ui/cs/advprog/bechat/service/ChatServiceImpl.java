@@ -18,13 +18,12 @@ public class ChatServiceImpl implements ChatService {
 
     private final ChatMessageRepository chatMessageRepository;
     private final ChatSessionRepository chatSessionRepository;
-    private final TokenVerificationService tokenVerificationService;
 
     @Override
-    public ChatMessage sendMessage(SendMessageRequest dto, String token) {
-        UUID senderId = tokenVerificationService.getUserIdFromToken(token);
+    public ChatMessage sendMessage(SendMessageRequest dto, UUID senderId) {
         ChatSession session = chatSessionRepository.findById(dto.getSessionId())
                 .orElseThrow(() -> new RuntimeException("Session not found"));
+
         if (!session.getPacilian().equals(senderId) && !session.getCaregiver().equals(senderId)) {
             throw new SecurityException("You are not part of this session.");
         }
@@ -42,8 +41,7 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
-    public List<ChatMessage> getMessages(UUID sessionId, String token) {
-        UUID userId = tokenVerificationService.getUserIdFromToken(token);
+    public List<ChatMessage> getMessages(UUID sessionId, UUID userId) {
         ChatSession session = getSessionById(sessionId);
 
         if (!session.getPacilian().equals(userId) && !session.getCaregiver().equals(userId)) {
@@ -54,8 +52,7 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
-    public ChatMessage editMessage(UUID messageId, String newContent, String token) {
-        UUID userId = tokenVerificationService.getUserIdFromToken(token);
+    public ChatMessage editMessage(UUID messageId, String newContent, UUID userId) {
         ChatMessage message = chatMessageRepository.findById(messageId)
                 .orElseThrow(() -> new RuntimeException("Message not found"));
 
@@ -68,8 +65,7 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
-    public ChatMessage deleteMessage(UUID messageId, String token) {
-        UUID userId = tokenVerificationService.getUserIdFromToken(token);
+    public ChatMessage deleteMessage(UUID messageId, UUID userId) {
         ChatMessage message = chatMessageRepository.findById(messageId)
                 .orElseThrow(() -> new RuntimeException("Message not found"));
 

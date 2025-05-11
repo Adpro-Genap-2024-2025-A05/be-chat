@@ -8,9 +8,9 @@ import java.util.List;
 import java.util.UUID;
 
 public interface ChatService {
-    ChatMessage sendMessage(SendMessageRequest dto, String token);
-    List<ChatMessage> getMessages(UUID sessionId, String token);
-    ChatMessage editMessage(UUID messageId, String newContent, String token);
-    ChatMessage deleteMessage(UUID messageId, String token);
+    ChatMessage sendMessage(SendMessageRequest request, UUID senderId);
+    List<ChatMessage> getMessages(UUID sessionId, UUID userId);
+    ChatMessage editMessage(UUID messageId, String newContent, UUID userId);
+    ChatMessage deleteMessage(UUID messageId, UUID userId);
     ChatSession getSessionById(UUID sessionId);
 }

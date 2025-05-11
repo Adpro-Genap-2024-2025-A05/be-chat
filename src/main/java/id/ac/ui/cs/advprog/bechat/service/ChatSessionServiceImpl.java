@@ -18,31 +18,34 @@ public class ChatSessionServiceImpl implements ChatSessionService {
 
     @Override
     public ChatSession createSession(UUID pacilian, UUID caregiver) {
-        Optional<ChatSession> existing = findSession(pacilian, caregiver);
-        if (existing.isPresent()) {
-            return existing.get();
+        if (pacilian == null || caregiver == null) {
+            throw new IllegalArgumentException("Pacilian and Caregiver must not be null");
         }
 
-        ChatSession session = new ChatSession();
-        session.setId(UUID.randomUUID());
-        session.setPacilian(pacilian);
-        session.setCaregiver(caregiver);
-        session.setCreatedAt(LocalDateTime.now());
-
-        return chatSessionRepository.save(session);
+        return findSession(pacilian, caregiver)
+                .orElseGet(() -> {
+                    ChatSession session = new ChatSession();
+                    session.setId(UUID.randomUUID());
+                    session.setPacilian(pacilian);
+                    session.setCaregiver(caregiver);
+                    session.setCreatedAt(LocalDateTime.now());
+                    return chatSessionRepository.save(session);
+                });
     }
 
     @Override
     public Optional<ChatSession> findSession(UUID pacilian, UUID caregiver) {
         return chatSessionRepository.findAll().stream()
-                .filter(s -> (s.getPacilian().equals(pacilian) && s.getCaregiver().equals(caregiver)) ||
-                        (s.getPacilian().equals(caregiver) && s.getCaregiver().equals(pacilian)))
-                .findFirst();
+            .filter(s -> s.getPacilian() != null && s.getCaregiver() != null)
+            .filter(s ->
+                (s.getPacilian().equals(pacilian) && s.getCaregiver().equals(caregiver)) ||
+                (s.getPacilian().equals(caregiver) && s.getCaregiver().equals(pacilian))
+            )
+            .findFirst();
     }
 
     @Override
     public List<ChatSession> getSessionsByUser(UUID userId) {
         return chatSessionRepository.findByPacilianOrCaregiver(userId, userId);
     }
-
 }
