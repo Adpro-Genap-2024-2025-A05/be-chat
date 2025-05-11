@@ -37,6 +37,7 @@ public class CreateMessageFunctionalTest {
     private ChatMessageRepository chatMessageRepository;
 
     private ChatSession session;
+    private static final String FAKE_TOKEN = "Bearer faketoken";
 
     @BeforeEach
     void setUp() {
@@ -45,28 +46,28 @@ public class CreateMessageFunctionalTest {
 
         session = new ChatSession();
         session.setId(UUID.randomUUID());
-        session.setUser1Id(UUID.fromString("11111111-1111-1111-1111-111111111111"));
-        session.setUser2Id(UUID.fromString("22222222-2222-2222-2222-222222222222"));
+        session.setPacilian(UUID.fromString("11111111-1111-1111-1111-111111111111"));
+        session.setCaregiver(UUID.fromString("22222222-2222-2222-2222-222222222222"));
         session.setCreatedAt(LocalDateTime.now());
-        session = chatSessionRepository.save(session);
+        chatSessionRepository.save(session);
     }
 
     @Test
     void whenSendMessage_shouldSaveMessageToRepositoryAndReturnIt() throws Exception {
         SendMessageRequest request = new SendMessageRequest();
         request.setSessionId(session.getId());
-        request.setSenderId(session.getUser1Id());
-        request.setContent("di aeon");
+        request.setContent("di aeon"); 
 
-        mockMvc.perform(post("/api/v1/chat/send")
+        mockMvc.perform(post("/chat/send")
+                        .header("Authorization", FAKE_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").exists())
-                .andExpect(jsonPath("$.senderId").value(session.getUser1Id().toString()))
-                .andExpect(jsonPath("$.content").value("di aeon"))
-                .andExpect(jsonPath("$.edited").value(false))
-                .andExpect(jsonPath("$.deleted").value(false));
+                .andExpect(jsonPath("$.data.id").exists())
+                .andExpect(jsonPath("$.data.senderId").value(session.getPacilian().toString()))
+                .andExpect(jsonPath("$.data.content").value("di aeon"))
+                .andExpect(jsonPath("$.data.edited").value(false))
+                .andExpect(jsonPath("$.data.deleted").value(false));
     }
 }

@@ -2,9 +2,14 @@ package id.ac.ui.cs.advprog.bechat.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import id.ac.ui.cs.advprog.bechat.dto.CreateSessionRequest;
+import id.ac.ui.cs.advprog.bechat.dto.TokenVerificationResponseDto;
 import id.ac.ui.cs.advprog.bechat.model.ChatSession;
+import id.ac.ui.cs.advprog.bechat.model.enums.Role;
 import id.ac.ui.cs.advprog.bechat.service.ChatSessionService;
+import id.ac.ui.cs.advprog.bechat.service.TokenVerificationService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -13,10 +18,10 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
-import static org.mockito.Mockito.when;
+
+import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -29,88 +34,61 @@ class ChatSessionControllerTest {
     @MockBean
     private ChatSessionService chatSessionService;
 
+    @MockBean
+    private TokenVerificationService tokenVerificationService;
+
     @Autowired
     private ObjectMapper objectMapper;
 
-    @Test
-    void testFindSession_found() throws Exception {
-        UUID user1 = UUID.randomUUID();
-        UUID user2 = UUID.randomUUID();
-        ChatSession session = new ChatSession();
-        session.setId(UUID.randomUUID());
-        session.setUser1Id(user1);
-        session.setUser2Id(user2);
-        session.setCreatedAt(LocalDateTime.now());
+    private UUID dummyUserId;
+    private static final String DUMMY_TOKEN = "Bearer faketoken";
+    private ChatSession dummySession;
 
-        when(chatSessionService.findSession(user1, user2)).thenReturn(Optional.of(session));
+    @BeforeEach
+    void setUp() {
+        dummyUserId = UUID.randomUUID();
 
-        mockMvc.perform(get("/api/v1/chat/session/find")
-                        .param("user1", user1.toString())
-                        .param("user2", user2.toString()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.user1Id").value(user1.toString()))
-                .andExpect(jsonPath("$.user2Id").value(user2.toString()));
-    }
+        dummySession = new ChatSession();
+        dummySession.setId(UUID.randomUUID());
+        dummySession.setPacilian(dummyUserId);
+        dummySession.setCaregiver(UUID.randomUUID());
+        dummySession.setCreatedAt(LocalDateTime.now());
 
-    @Test
-    void testFindSession_notFound() throws Exception {
-        UUID user1 = UUID.randomUUID();
-        UUID user2 = UUID.randomUUID();
-
-        when(chatSessionService.findSession(user1, user2)).thenReturn(Optional.empty());
-
-        mockMvc.perform(get("/api/v1/chat/session/find")
-                        .param("user1", user1.toString())
-                        .param("user2", user2.toString()))
-                .andExpect(status().isNotFound());
+        Mockito.when(tokenVerificationService.verifyToken("faketoken"))
+                .thenReturn(TokenVerificationResponseDto.builder()
+                        .valid(true)
+                        .userId(dummyUserId.toString())
+                        .role(Role.PACILIAN)
+                        .email("user@example.com")
+                        .expiresIn(3600L)
+                        .build());
     }
 
     @Test
     void testCreateSession() throws Exception {
-        UUID user1 = UUID.randomUUID();
-        UUID user2 = UUID.randomUUID();
         CreateSessionRequest request = new CreateSessionRequest();
-        request.setUser1Id(user1);
-        request.setUser2Id(user2);
+        request.setCaregiver(dummySession.getCaregiver());
 
-        ChatSession session = new ChatSession();
-        session.setId(UUID.randomUUID());
-        session.setUser1Id(user1);
-        session.setUser2Id(user2);
-        session.setCreatedAt(LocalDateTime.now());
+        Mockito.when(chatSessionService.createSession(eq(dummyUserId), eq(dummySession.getCaregiver())))
+                .thenReturn(dummySession);
 
-        when(chatSessionService.createSession(user1, user2)).thenReturn(session);
-
-        mockMvc.perform(post("/api/v1/chat/session/create")
+        mockMvc.perform(post("/chat/session/create")
+                        .header("Authorization", DUMMY_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.user1Id").value(user1.toString()))
-                .andExpect(jsonPath("$.user2Id").value(user2.toString()));
+                .andExpect(jsonPath("$.data.pacilian").value(dummyUserId.toString()))
+                .andExpect(jsonPath("$.data.caregiver").value(dummySession.getCaregiver().toString()));
     }
 
     @Test
     void testGetSessionsByUser() throws Exception {
-        UUID userId = UUID.randomUUID();
-        ChatSession session = new ChatSession();
-        session.setId(UUID.randomUUID());
-        session.setUser1Id(userId);
-        session.setUser2Id(UUID.randomUUID());
-        session.setCreatedAt(LocalDateTime.now());
+        Mockito.when(chatSessionService.getSessionsByUser(eq(dummyUserId)))
+                .thenReturn(List.of(dummySession));
 
-        when(chatSessionService.getSessionsByUser(userId)).thenReturn(List.of(session));
-
-        mockMvc.perform(get("/api/v1/chat/session/user/" + userId))
+        mockMvc.perform(get("/chat/session/user")
+                        .header("Authorization", DUMMY_TOKEN))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].user1Id").value(userId.toString()));
+                .andExpect(jsonPath("$.data[0].pacilian").value(dummyUserId.toString()));
     }
-
-    @Test
-    void testDeleteSession() throws Exception {
-        UUID sessionId = UUID.randomUUID();
-
-        mockMvc.perform(delete("/api/v1/chat/session/" + sessionId))
-                .andExpect(status().isNoContent());
-    }
-
 }

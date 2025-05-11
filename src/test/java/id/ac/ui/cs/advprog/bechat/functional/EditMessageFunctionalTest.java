@@ -16,47 +16,44 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 class EditMessageFunctionalTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @Autowired
-    private ChatSessionRepository chatSessionRepository;
-
-    @Autowired
-    private ChatMessageRepository chatMessageRepository;
-
-    @Autowired
-    private ObjectMapper objectMapper;
+    @Autowired private MockMvc mockMvc;
+    @Autowired private ChatSessionRepository chatSessionRepository;
+    @Autowired private ChatMessageRepository chatMessageRepository;
+    @Autowired private ObjectMapper objectMapper;
 
     private ChatSession session;
     private ChatMessage message;
+    private static final String FAKE_TOKEN = "Bearer faketoken";
 
     @BeforeEach
     void setUp() {
         chatMessageRepository.deleteAll();
         chatSessionRepository.deleteAll();
 
+        UUID pacilian = UUID.fromString("11111111-1111-1111-1111-111111111111");
+        UUID caregiver = UUID.fromString("22222222-2222-2222-2222-222222222222");
+
         session = new ChatSession();
         session.setId(UUID.randomUUID());
-        session.setUser1Id(UUID.randomUUID());
-        session.setUser2Id(UUID.randomUUID());
+        session.setPacilian(pacilian);
+        session.setCaregiver(caregiver);
         session.setCreatedAt(LocalDateTime.now());
         session = chatSessionRepository.save(session);
 
         message = new ChatMessage();
         message.setId(UUID.randomUUID());
         message.setSession(session);
-        message.setSenderId(session.getUser1Id());
+        message.setSenderId(pacilian);
         message.setContent("Pesan tidak diedit");
         message.setCreatedAt(LocalDateTime.now());
         message.setDeleted(false);
@@ -69,12 +66,13 @@ class EditMessageFunctionalTest {
         EditMessageRequest request = new EditMessageRequest();
         request.setContent("Pesan diedit");
 
-        mockMvc.perform(put("/api/v1/chat/message/" + message.getId())
+        mockMvc.perform(put("/chat/message/" + message.getId())
+                        .header("Authorization", FAKE_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content").value("Pesan diedit"))
-                .andExpect(jsonPath("$.edited").value(true));
+                .andExpect(jsonPath("$.data.content").value("Pesan diedit"))
+                .andExpect(jsonPath("$.data.edited").value(true));
 
         ChatMessage updated = chatMessageRepository.findById(message.getId()).orElseThrow();
         assertThat(updated.getContent()).isEqualTo("Pesan diedit");
@@ -84,16 +82,19 @@ class EditMessageFunctionalTest {
 
     @Test
     void testEditDeletedMessage_shouldReturnBadRequest() throws Exception {
-        mockMvc.perform(delete("/api/v1/chat/message/" + message.getId()))
+        mockMvc.perform(delete("/chat/message/" + message.getId())
+                        .header("Authorization", FAKE_TOKEN))
                 .andExpect(status().isOk());
 
         EditMessageRequest request = new EditMessageRequest();
         request.setContent("Percobaan edit setelah dihapus");
 
-        mockMvc.perform(put("/api/v1/chat/message/" + message.getId())
+        mockMvc.perform(put("/chat/message/" + message.getId())
+                        .header("Authorization", FAKE_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Message sudah dihapus"));
     }
 
     @Test
@@ -101,7 +102,8 @@ class EditMessageFunctionalTest {
         EditMessageRequest firstEdit = new EditMessageRequest();
         firstEdit.setContent("Pesan telah diedit pertama kali");
 
-        mockMvc.perform(put("/api/v1/chat/message/" + message.getId())
+        mockMvc.perform(put("/chat/message/" + message.getId())
+                        .header("Authorization", FAKE_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(firstEdit)))
                 .andExpect(status().isOk());
@@ -109,30 +111,29 @@ class EditMessageFunctionalTest {
         EditMessageRequest secondEdit = new EditMessageRequest();
         secondEdit.setContent("Pesan diedit ulang");
 
-        mockMvc.perform(put("/api/v1/chat/message/" + message.getId())
+        mockMvc.perform(put("/chat/message/" + message.getId())
+                        .header("Authorization", FAKE_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(secondEdit)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content").value("Pesan diedit ulang"))
-                .andExpect(jsonPath("$.edited").value(true));
+                .andExpect(jsonPath("$.data.content").value("Pesan diedit ulang"))
+                .andExpect(jsonPath("$.data.edited").value(true));
     }
 
     @Test
-    void testEditMessage_whenMessageAlreadyDeleted_shouldThrowException() throws Exception {
+    void testEditMessage_whenAlreadyDeleted_shouldThrowException() throws Exception {
         message.setDeleted(true);
         chatMessageRepository.save(message);
-        message = chatMessageRepository.findById(message.getId()).orElseThrow(); // trigger @PostLoad
+        message = chatMessageRepository.findById(message.getId()).orElseThrow(); // force reload
 
         EditMessageRequest request = new EditMessageRequest();
         request.setContent("Percobaan edit");
 
-        mockMvc.perform(put("/api/v1/chat/message/" + message.getId())
+        mockMvc.perform(put("/chat/message/" + message.getId())
+                        .header("Authorization", FAKE_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
-                .andExpect(result -> assertThat(result.getResolvedException())
-                        .isInstanceOf(IllegalStateException.class)
-                        .hasMessageContaining("tidak bisa diedit"));
+                .andExpect(jsonPath("$.message").value("Message sudah dihapus"));
     }
-
 }

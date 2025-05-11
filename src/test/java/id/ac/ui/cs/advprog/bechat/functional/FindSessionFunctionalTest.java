@@ -1,7 +1,6 @@
 package id.ac.ui.cs.advprog.bechat.functional;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import id.ac.ui.cs.advprog.bechat.model.ChatSession;
 import id.ac.ui.cs.advprog.bechat.repository.ChatSessionRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,7 +16,6 @@ import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -32,20 +30,23 @@ public class FindSessionFunctionalTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    private UUID user1Id;
-    private UUID user2Id;
+    private UUID pacilian;
+    private UUID caregiver;
     private ChatSession session;
+
+    private static final String FAKE_TOKEN = "Bearer faketoken";
 
     @BeforeEach
     void setUp() {
         chatSessionRepository.deleteAll();
-        user1Id = UUID.randomUUID();
-        user2Id = UUID.randomUUID();
+
+        pacilian = UUID.fromString("11111111-1111-1111-1111-111111111111");
+        caregiver = UUID.fromString("22222222-2222-2222-2222-222222222222");
 
         session = new ChatSession();
         session.setId(UUID.randomUUID());
-        session.setUser1Id(user1Id);
-        session.setUser2Id(user2Id);
+        session.setPacilian(pacilian);
+        session.setCaregiver(caregiver);
         session.setCreatedAt(LocalDateTime.now());
 
         chatSessionRepository.save(session);
@@ -53,13 +54,14 @@ public class FindSessionFunctionalTest {
 
     @Test
     void findSession_shouldReturnSessionIfExists() throws Exception {
-        mockMvc.perform(get("/api/v1/chat/session/find")
-                        .param("user1", user1Id.toString())
-                        .param("user2", user2Id.toString())
+        mockMvc.perform(get("/chat/session/find")
+                        .param("user1", pacilian.toString())
+                        .param("user2", caregiver.toString())
+                        .header("Authorization", FAKE_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.user1Id").value(user1Id.toString()))
-                .andExpect(jsonPath("$.user2Id").value(user2Id.toString()));
+                .andExpect(jsonPath("$.data.pacilian").value(pacilian.toString()))
+                .andExpect(jsonPath("$.data.caregiver").value(caregiver.toString()));
     }
 
     @Test
@@ -67,10 +69,12 @@ public class FindSessionFunctionalTest {
         UUID otherUser1 = UUID.randomUUID();
         UUID otherUser2 = UUID.randomUUID();
 
-        mockMvc.perform(get("/api/v1/chat/session/find")
+        mockMvc.perform(get("/chat/session/find")
                         .param("user1", otherUser1.toString())
                         .param("user2", otherUser2.toString())
+                        .header("Authorization", FAKE_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Session not found"));
     }
 }

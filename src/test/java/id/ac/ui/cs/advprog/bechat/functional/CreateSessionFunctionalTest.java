@@ -28,38 +28,41 @@ public class CreateSessionFunctionalTest {
 
     @Autowired
     private ChatSessionRepository chatSessionRepository;
+
     @Autowired
     private ChatMessageRepository chatMessageRepository;
 
     @Autowired
     private ObjectMapper objectMapper;
 
-    private UUID user1Id;
-    private UUID user2Id;
+    private UUID pacilian;
+    private UUID caregiver;
+
+    private static final String FAKE_TOKEN = "Bearer faketoken";
 
     @BeforeEach
     void setUp() {
         chatMessageRepository.deleteAll();
         chatSessionRepository.deleteAll();
-        user1Id = UUID.randomUUID();
-        user2Id = UUID.randomUUID();
+        pacilian = UUID.fromString("11111111-1111-1111-1111-111111111111"); // dari token
+        caregiver = UUID.fromString("22222222-2222-2222-2222-222222222222");
     }
 
     @Test
     void createSession_shouldSaveAndReturnSession() throws Exception {
         CreateSessionRequest request = new CreateSessionRequest();
-        request.setUser1Id(user1Id);
-        request.setUser2Id(user2Id);
+        request.setCaregiver(caregiver); 
 
-        mockMvc.perform(post("/api/v1/chat/session/create")
+        mockMvc.perform(post("/chat/session/create")
+                        .header("Authorization", FAKE_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.user1Id").value(user1Id.toString()))
-                .andExpect(jsonPath("$.user2Id").value(user2Id.toString()));
+                .andExpect(jsonPath("$.data.pacilian").value(pacilian.toString()))
+                .andExpect(jsonPath("$.data.caregiver").value(caregiver.toString()));
 
         ChatSession saved = chatSessionRepository.findAll().get(0);
-        assertThat(saved.getUser1Id()).isEqualTo(user1Id);
-        assertThat(saved.getUser2Id()).isEqualTo(user2Id);
+        assertThat(saved.getPacilian()).isEqualTo(pacilian);
+        assertThat(saved.getCaregiver()).isEqualTo(caregiver);
     }
 }

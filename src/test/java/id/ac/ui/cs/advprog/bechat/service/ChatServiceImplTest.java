@@ -6,11 +6,8 @@ import id.ac.ui.cs.advprog.bechat.model.ChatSession;
 import id.ac.ui.cs.advprog.bechat.repository.ChatMessageRepository;
 import id.ac.ui.cs.advprog.bechat.repository.ChatSessionRepository;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -37,62 +34,57 @@ class ChatServiceImplTest {
 
         ChatSession session = new ChatSession();
         session.setId(sessionId);
+        session.setPacilian(senderId);
 
         SendMessageRequest request = new SendMessageRequest();
         request.setSessionId(sessionId);
-        request.setSenderId(senderId);
-        request.setContent("Halo");
+        request.setContent("Halo Dunia");
 
         when(chatSessionRepository.findById(sessionId)).thenReturn(Optional.of(session));
-        when(chatMessageRepository.save(any(ChatMessage.class))).thenAnswer(i -> i.getArgument(0));
+        when(chatMessageRepository.save(any(ChatMessage.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        ChatMessage result = chatService.sendMessage(request);
+        ChatMessage result = chatService.sendMessage(request, senderId);
 
-        assertNotNull(result.getId());
-        assertEquals("Halo", result.getContent());
-        assertEquals(session, result.getSession());
+        assertEquals("Halo Dunia", result.getContent());
         assertEquals(senderId, result.getSenderId());
+        assertEquals(session, result.getSession());
         assertFalse(result.isEdited());
         assertFalse(result.isDeleted());
-        assertNotNull(result.getCreatedAt());
     }
 
     @Test
-    void testSendMessage_sessionNotFound_shouldThrow() {
+    void testSendMessage_notMember_shouldThrowSecurityException() {
         UUID sessionId = UUID.randomUUID();
+        UUID senderId = UUID.randomUUID();
+        UUID anotherUser = UUID.randomUUID();
+
+        ChatSession session = new ChatSession();
+        session.setId(sessionId);
+        session.setPacilian(anotherUser);
+        session.setCaregiver(anotherUser);
+
         SendMessageRequest request = new SendMessageRequest();
         request.setSessionId(sessionId);
+        request.setContent("Test");
 
-        when(chatSessionRepository.findById(sessionId)).thenReturn(Optional.empty());
+        when(chatSessionRepository.findById(sessionId)).thenReturn(Optional.of(session));
 
-        RuntimeException ex = assertThrows(RuntimeException.class, () -> chatService.sendMessage(request));
-        assertEquals("Session not found", ex.getMessage());
-    }
-
-    @Test
-    void testGetMessages_shouldReturnList() {
-        UUID sessionId = UUID.randomUUID();
-        ChatMessage msg = new ChatMessage();
-        when(chatMessageRepository.findBySessionIdOrderByCreatedAtAsc(sessionId)).thenReturn(List.of(msg));
-
-        List<ChatMessage> result = chatService.getMessages(sessionId);
-
-        assertEquals(1, result.size());
-        assertSame(msg, result.get(0));
+        assertThrows(SecurityException.class, () -> chatService.sendMessage(request, senderId));
     }
 
     @Test
     void testEditMessage_success() {
         UUID messageId = UUID.randomUUID();
-        ChatMessage msg = new ChatMessage();
-        msg.setId(messageId);
-        msg.setContent("Old");
-        msg.setEdited(false);
+        UUID senderId = UUID.randomUUID();
+        ChatMessage message = new ChatMessage();
+        message.setId(messageId);
+        message.setSenderId(senderId);
+        message.setContent("Old");
 
-        when(chatMessageRepository.findById(messageId)).thenReturn(Optional.of(msg));
-        when(chatMessageRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(chatMessageRepository.findById(messageId)).thenReturn(Optional.of(message));
+        when(chatMessageRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        ChatMessage result = chatService.editMessage(messageId, "New");
+        ChatMessage result = chatService.editMessage(messageId, "New", senderId);
 
         assertEquals("New", result.getContent());
         assertTrue(result.isEdited());
@@ -100,135 +92,79 @@ class ChatServiceImplTest {
     }
 
     @Test
-    void testEditMessage_notFound_shouldThrow() {
+    void testEditMessage_wrongSender_shouldThrowSecurityException() {
         UUID messageId = UUID.randomUUID();
-        when(chatMessageRepository.findById(messageId)).thenReturn(Optional.empty());
+        ChatMessage message = new ChatMessage();
+        message.setId(messageId);
+        message.setSenderId(UUID.randomUUID());
 
-        RuntimeException ex = assertThrows(RuntimeException.class, () -> chatService.editMessage(messageId, "New"));
-        assertEquals("Message not found", ex.getMessage());
+        when(chatMessageRepository.findById(messageId)).thenReturn(Optional.of(message));
+
+        assertThrows(SecurityException.class, () -> chatService.editMessage(messageId, "test", UUID.randomUUID()));
     }
 
     @Test
     void testDeleteMessage_success() {
         UUID messageId = UUID.randomUUID();
-        ChatMessage msg = new ChatMessage();
-        msg.setId(messageId);
-        msg.setContent("Before");
-        msg.setDeleted(false);
+        UUID senderId = UUID.randomUUID();
+        ChatMessage message = new ChatMessage();
+        message.setId(messageId);
+        message.setSenderId(senderId);
+        message.setContent("Hello");
 
-        when(chatMessageRepository.findById(messageId)).thenReturn(Optional.of(msg));
-        when(chatMessageRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(chatMessageRepository.findById(messageId)).thenReturn(Optional.of(message));
+        when(chatMessageRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        ChatMessage result = chatService.deleteMessage(messageId);
+        ChatMessage result = chatService.deleteMessage(messageId, senderId);
 
         assertTrue(result.isDeleted());
         assertEquals("Pesan telah dihapus", result.getContent());
     }
 
     @Test
-    void testDeleteMessage_notFound_shouldThrow() {
+    void testDeleteMessage_wrongSender_shouldThrowSecurityException() {
         UUID messageId = UUID.randomUUID();
-        when(chatMessageRepository.findById(messageId)).thenReturn(Optional.empty());
+        ChatMessage message = new ChatMessage();
+        message.setId(messageId);
+        message.setSenderId(UUID.randomUUID());
 
-        RuntimeException ex = assertThrows(RuntimeException.class, () -> chatService.deleteMessage(messageId));
-        assertEquals("Message not found", ex.getMessage());
+        when(chatMessageRepository.findById(messageId)).thenReturn(Optional.of(message));
+
+        assertThrows(SecurityException.class, () -> chatService.deleteMessage(messageId, UUID.randomUUID()));
     }
 
-    @Nested
-    class ChatSessionServiceImplTest {
+    @Test
+    void testGetMessages_notMember_shouldThrowSecurityException() {
+        UUID sessionId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
 
-        private ChatSessionRepository chatSessionRepository;
-        private ChatSessionServiceImpl chatSessionService;
+        ChatSession session = new ChatSession();
+        session.setId(sessionId);
+        session.setPacilian(UUID.randomUUID());
+        session.setCaregiver(UUID.randomUUID());
 
-        @BeforeEach
-        void setUp() {
-            chatSessionRepository = mock(ChatSessionRepository.class);
-            chatSessionService = new ChatSessionServiceImpl(chatSessionRepository);
-        }
+        when(chatSessionRepository.findById(sessionId)).thenReturn(Optional.of(session));
 
-        @Test
-        void testCreateSession_shouldReturnSavedSession() {
-            UUID user1 = UUID.randomUUID();
-            UUID user2 = UUID.randomUUID();
+        assertThrows(SecurityException.class, () -> chatService.getMessages(sessionId, userId));
+    }
 
-            when(chatSessionRepository.save(any(ChatSession.class)))
-                    .thenAnswer(invocation -> invocation.getArgument(0));
+    @Test
+    void testGetSessionById_shouldReturnSession() {
+        UUID sessionId = UUID.randomUUID();
+        ChatSession session = new ChatSession();
+        session.setId(sessionId);
 
-            ChatSession session = chatSessionService.createSession(user1, user2);
+        when(chatSessionRepository.findById(sessionId)).thenReturn(Optional.of(session));
 
-            assertEquals(user1, session.getUser1Id());
-            assertEquals(user2, session.getUser2Id());
-            assertNotNull(session.getId());
-            assertNotNull(session.getCreatedAt());
-        }
+        ChatSession result = chatService.getSessionById(sessionId);
+        assertEquals(sessionId, result.getId());
+    }
 
-        @Test
-        void testFindSession_shouldReturnIfFound() {
-            UUID user1 = UUID.randomUUID();
-            UUID user2 = UUID.randomUUID();
+    @Test
+    void testGetSessionById_notFound_shouldThrow() {
+        UUID sessionId = UUID.randomUUID();
+        when(chatSessionRepository.findById(sessionId)).thenReturn(Optional.empty());
 
-            ChatSession session = new ChatSession();
-            session.setUser1Id(user1);
-            session.setUser2Id(user2);
-
-            when(chatSessionRepository.findAll()).thenReturn(List.of(session));
-
-            Optional<ChatSession> result = chatSessionService.findSession(user1, user2);
-
-            assertTrue(result.isPresent());
-            assertEquals(session, result.get());
-        }
-
-        @Test
-        void testFindSession_shouldReturnEmptyIfNotFound() {
-            when(chatSessionRepository.findAll()).thenReturn(Collections.emptyList());
-
-            Optional<ChatSession> result = chatSessionService.findSession(UUID.randomUUID(), UUID.randomUUID());
-
-            assertTrue(result.isEmpty());
-        }
-
-        @Test
-        void testGetSessionsByUser_shouldReturnSessions() {
-            UUID userId = UUID.randomUUID();
-            ChatSession session = new ChatSession();
-            session.setUser1Id(userId);
-            session.setUser2Id(UUID.randomUUID());
-
-            when(chatSessionRepository.findByUser1IdOrUser2Id(userId, userId)).thenReturn(List.of(session));
-
-            List<ChatSession> result = chatSessionService.getSessionsByUser(userId);
-
-            assertEquals(1, result.size());
-            assertEquals(session, result.get(0));
-        }
-
-        @Test
-        void testFindSession_shouldReturnIfUsersAreSwapped() {
-            UUID user1 = UUID.randomUUID();
-            UUID user2 = UUID.randomUUID();
-
-            ChatSession session = new ChatSession();
-            session.setUser1Id(user2);
-            session.setUser2Id(user1);
-
-            when(chatSessionRepository.findAll()).thenReturn(List.of(session));
-
-            Optional<ChatSession> result = chatSessionService.findSession(user1, user2);
-
-            assertTrue(result.isPresent());
-            assertEquals(session, result.get());
-        }
-
-        @Test
-        void testDeleteSession_shouldCallRepository() {
-            UUID sessionId = UUID.randomUUID();
-
-            chatSessionService.deleteSession(sessionId);
-
-            verify(chatSessionRepository, times(1)).deleteById(sessionId);
-        }
-
-
+        assertThrows(RuntimeException.class, () -> chatService.getSessionById(sessionId));
     }
 }

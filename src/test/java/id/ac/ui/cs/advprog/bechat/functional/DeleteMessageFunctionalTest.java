@@ -1,5 +1,6 @@
 package id.ac.ui.cs.advprog.bechat.functional;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import id.ac.ui.cs.advprog.bechat.dto.EditMessageRequest;
 import id.ac.ui.cs.advprog.bechat.model.ChatMessage;
 import id.ac.ui.cs.advprog.bechat.model.ChatSession;
@@ -10,18 +11,17 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.http.MediaType;
 @SpringBootTest
 @AutoConfigureMockMvc
 public class DeleteMessageFunctionalTest {
@@ -35,24 +35,32 @@ public class DeleteMessageFunctionalTest {
     @Autowired
     private ChatMessageRepository chatMessageRepository;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     private ChatMessage message;
+    private UUID senderId;
+    private static final String FAKE_TOKEN = "Bearer faketoken";
 
     @BeforeEach
     void setUp() {
         chatMessageRepository.deleteAll();
         chatSessionRepository.deleteAll();
 
+        senderId = UUID.fromString("11111111-1111-1111-1111-111111111111");
+        UUID caregiverId = UUID.fromString("22222222-2222-2222-2222-222222222222");
+
         ChatSession session = new ChatSession();
         session.setId(UUID.randomUUID());
-        session.setUser1Id(UUID.randomUUID());
-        session.setUser2Id(UUID.randomUUID());
+        session.setPacilian(senderId);
+        session.setCaregiver(caregiverId);
         session.setCreatedAt(LocalDateTime.now());
         chatSessionRepository.save(session);
 
         message = new ChatMessage();
         message.setId(UUID.randomUUID());
         message.setSession(session);
-        message.setSenderId(session.getUser1Id());
+        message.setSenderId(senderId);
         message.setContent("Ini pesan yang akan dihapus");
         message.setCreatedAt(LocalDateTime.now());
         message.setDeleted(false);
@@ -62,10 +70,11 @@ public class DeleteMessageFunctionalTest {
 
     @Test
     void deleteMessage_shouldMarkMessageAsDeleted() throws Exception {
-        mockMvc.perform(delete("/api/v1/chat/message/" + message.getId()))
+        mockMvc.perform(delete("/chat/message/" + message.getId())
+                        .header("Authorization", FAKE_TOKEN))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.deleted").value(true))
-                .andExpect(jsonPath("$.content").value("Pesan telah dihapus"));
+                .andExpect(jsonPath("$.data.deleted").value(true))
+                .andExpect(jsonPath("$.data.content").value("Pesan telah dihapus"));
 
         ChatMessage updated = chatMessageRepository.findById(message.getId()).orElseThrow();
         assertThat(updated.isDeleted()).isTrue();
@@ -77,28 +86,27 @@ public class DeleteMessageFunctionalTest {
         EditMessageRequest editRequest = new EditMessageRequest();
         editRequest.setContent("Sudah diedit sebelumnya");
 
-        mockMvc.perform(put("/api/v1/chat/message/" + message.getId())
+        mockMvc.perform(put("/chat/message/" + message.getId())
+                        .header("Authorization", FAKE_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(new ObjectMapper().writeValueAsString(editRequest)))
+                        .content(objectMapper.writeValueAsString(editRequest)))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(delete("/api/v1/chat/message/" + message.getId()))
+        mockMvc.perform(delete("/chat/message/" + message.getId())
+                        .header("Authorization", FAKE_TOKEN))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.deleted").value(true))
-                .andExpect(jsonPath("$.content").value("Pesan telah dihapus"));
+                .andExpect(jsonPath("$.data.deleted").value(true))
+                .andExpect(jsonPath("$.data.content").value("Pesan telah dihapus"));
     }
 
     @Test
     void testDelete_whenAlreadyDeleted_shouldThrowException() throws Exception {
         message.setDeleted(true);
         chatMessageRepository.save(message);
-        message = chatMessageRepository.findById(message.getId()).orElseThrow(); // trigger @PostLoad
 
-        mockMvc.perform(delete("/api/v1/chat/message/" + message.getId()))
+        mockMvc.perform(delete("/chat/message/" + message.getId())
+                        .header("Authorization", FAKE_TOKEN))
                 .andExpect(status().isBadRequest())
-                .andExpect(result -> assertThat(result.getResolvedException())
-                        .isInstanceOf(IllegalStateException.class)
-                        .hasMessageContaining("sudah dihapus"));
+                .andExpect(jsonPath("$.message").value("Message sudah dihapus"));
     }
-
 }
