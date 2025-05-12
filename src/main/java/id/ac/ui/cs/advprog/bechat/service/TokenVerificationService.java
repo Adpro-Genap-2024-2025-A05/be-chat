@@ -1,5 +1,5 @@
 package id.ac.ui.cs.advprog.bechat.service;
-
+import id.ac.ui.cs.advprog.bechat.model.enums.Role;
 import id.ac.ui.cs.advprog.bechat.dto.TokenVerificationResponseDto;
 import id.ac.ui.cs.advprog.bechat.exception.AuthenticationException;
 import lombok.RequiredArgsConstructor;
@@ -47,5 +47,10 @@ public class TokenVerificationService {
 
     public UUID getUserIdFromToken(String token) {
         return UUID.fromString(verifyToken(token).getUserId());
+    }
+
+    public Role getRoleFromToken(String token) {
+        TokenVerificationResponseDto verification = verifyToken(token);
+        return verification.getRole();
     }
 }

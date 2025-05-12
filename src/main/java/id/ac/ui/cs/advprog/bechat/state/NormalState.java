@@ -2,7 +2,7 @@ package id.ac.ui.cs.advprog.bechat.state;
 
 import id.ac.ui.cs.advprog.bechat.model.ChatMessage;
 
-import java.time.LocalDateTime;
+import java.util.Date;
 
 public class NormalState implements MessageState {
 
@@ -10,7 +10,7 @@ public class NormalState implements MessageState {
     public void edit(ChatMessage message, String newContent) {
         message.setContent(newContent);
         message.setEdited(true);
-        message.setEditedAt(LocalDateTime.now());
+        message.setEditedAt(new Date());
         message.setState(new EditedState());
     }
 

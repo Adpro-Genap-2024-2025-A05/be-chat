@@ -28,10 +28,12 @@ public class ChatSessionController {
             @Valid @RequestBody CreateSessionRequest request,
             HttpServletRequest httpRequest
     ) {
+        String token = extractToken(httpRequest);
         UUID userId = getUserIdFromRequest(httpRequest);
-        ChatSession session = chatSessionService.createSession(userId, request.getCaregiver());
+        ChatSession session = chatSessionService.createSession(userId, request.getCaregiver(), token);
         return ResponseEntity.ok(BaseResponseDTO.success(session));
     }
+
 
     @GetMapping("/user")
     public ResponseEntity<BaseResponseDTO<List<ChatSession>>> getSessionsForCurrentUser(HttpServletRequest httpRequest) {
@@ -48,9 +50,12 @@ public class ChatSessionController {
         return header.substring(7);
     }
 
-    private UUID getUserIdFromRequest(HttpServletRequest request) {
-        String token = extractToken(request);
+    private UUID getUserIdFromToken(String token) {
         TokenVerificationResponseDto verification = tokenService.verifyToken(token);
         return UUID.fromString(verification.getUserId());
+    }
+
+    private UUID getUserIdFromRequest(HttpServletRequest request) {
+        return getUserIdFromToken(extractToken(request));
     }
 }

@@ -3,11 +3,11 @@ package id.ac.ui.cs.advprog.bechat.model;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import id.ac.ui.cs.advprog.bechat.state.*;
-
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
-import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.UUID;
 
 @Getter
@@ -18,20 +18,35 @@ import java.util.UUID;
 public class ChatMessage {
 
     @Id
+    @NotNull
     private UUID id;
 
     @ManyToOne
     @JoinColumn(name = "session_id", nullable = false)
     @JsonBackReference
+    @NotNull
     private ChatSession session;
 
+    @NotNull
+    @Column(nullable = false)
     private UUID senderId;
-    private String content;
-    private LocalDateTime createdAt;
-    private LocalDateTime editedAt;
-    private boolean edited;
-    private boolean deleted;
 
+    @NotNull
+    @Column(nullable = false)
+    private String content;
+
+    @Temporal(TemporalType.TIMESTAMP)
+    @Column(nullable = false, updatable = false)
+    private Date createdAt;
+
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date editedAt;
+
+    @Column(nullable = false)
+    private boolean edited;
+
+    @Column(nullable = false)
+    private boolean deleted;
 
     @Transient
     @JsonIgnore
