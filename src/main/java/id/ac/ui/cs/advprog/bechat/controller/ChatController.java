@@ -1,8 +1,6 @@
 package id.ac.ui.cs.advprog.bechat.controller;
 
-import id.ac.ui.cs.advprog.bechat.dto.EditMessageRequest;
-import id.ac.ui.cs.advprog.bechat.dto.SendMessageRequest;
-import id.ac.ui.cs.advprog.bechat.dto.TokenVerificationResponseDto;
+import id.ac.ui.cs.advprog.bechat.dto.*;
 import id.ac.ui.cs.advprog.bechat.model.ChatMessage;
 import id.ac.ui.cs.advprog.bechat.service.ChatService;
 import id.ac.ui.cs.advprog.bechat.service.TokenVerificationService;
@@ -24,44 +22,44 @@ public class ChatController {
     private final TokenVerificationService tokenVerificationService;
 
     @PostMapping("/send")
-    public ResponseEntity<ChatMessage> sendMessage(
+    public ResponseEntity<BaseResponseDTO<ChatMessage>> sendMessage(
             @Valid @RequestBody SendMessageRequest dto,
             HttpServletRequest request
     ) {
         UUID userId = getUserIdFromRequest(request);
         ChatMessage saved = chatService.sendMessage(dto, userId);
-        return ResponseEntity.ok(saved);
+        return ResponseEntity.ok(BaseResponseDTO.success(saved));
     }
 
     @GetMapping("/session/{id}")
-    public ResponseEntity<List<ChatMessage>> getMessages(
+    public ResponseEntity<BaseResponseDTO<List<ChatMessage>>> getMessages(
             @PathVariable UUID id,
             HttpServletRequest request
     ) {
         UUID userId = getUserIdFromRequest(request);
         List<ChatMessage> messages = chatService.getMessages(id, userId);
-        return ResponseEntity.ok(messages);
+        return ResponseEntity.ok(BaseResponseDTO.success(messages));
     }
 
     @PutMapping("/message/{id}")
-    public ResponseEntity<ChatMessage> editMessage(
+    public ResponseEntity<BaseResponseDTO<ChatMessage>> editMessage(
             @PathVariable UUID id,
             @Valid @RequestBody EditMessageRequest requestBody,
             HttpServletRequest request
     ) {
         UUID userId = getUserIdFromRequest(request);
         ChatMessage updated = chatService.editMessage(id, requestBody.getContent(), userId);
-        return ResponseEntity.ok(updated);
+        return ResponseEntity.ok(BaseResponseDTO.success(updated));
     }
 
     @DeleteMapping("/message/{id}")
-    public ResponseEntity<ChatMessage> deleteMessage(
+    public ResponseEntity<BaseResponseDTO<ChatMessage>> deleteMessage(
             @PathVariable UUID id,
             HttpServletRequest request
     ) {
         UUID userId = getUserIdFromRequest(request);
         ChatMessage deleted = chatService.deleteMessage(id, userId);
-        return ResponseEntity.ok(deleted);
+        return ResponseEntity.ok(BaseResponseDTO.success(deleted));
     }
 
     private String extractToken(HttpServletRequest request) {

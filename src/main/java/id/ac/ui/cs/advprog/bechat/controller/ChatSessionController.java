@@ -1,5 +1,6 @@
 package id.ac.ui.cs.advprog.bechat.controller;
 
+import id.ac.ui.cs.advprog.bechat.dto.BaseResponseDTO;
 import id.ac.ui.cs.advprog.bechat.dto.CreateSessionRequest;
 import id.ac.ui.cs.advprog.bechat.dto.TokenVerificationResponseDto;
 import id.ac.ui.cs.advprog.bechat.model.ChatSession;
@@ -23,19 +24,20 @@ public class ChatSessionController {
     private final TokenVerificationService tokenService;
 
     @PostMapping("/create")
-    public ResponseEntity<ChatSession> createSession(
+    public ResponseEntity<BaseResponseDTO<ChatSession>> createSession(
             @Valid @RequestBody CreateSessionRequest request,
             HttpServletRequest httpRequest
     ) {
         UUID userId = getUserIdFromRequest(httpRequest);
         ChatSession session = chatSessionService.createSession(userId, request.getCaregiver());
-        return ResponseEntity.ok(session);
+        return ResponseEntity.ok(BaseResponseDTO.success(session));
     }
 
     @GetMapping("/user")
-    public ResponseEntity<List<ChatSession>> getSessionsForCurrentUser(HttpServletRequest httpRequest) {
+    public ResponseEntity<BaseResponseDTO<List<ChatSession>>> getSessionsForCurrentUser(HttpServletRequest httpRequest) {
         UUID userId = getUserIdFromRequest(httpRequest);
-        return ResponseEntity.ok(chatSessionService.getSessionsByUser(userId));
+        List<ChatSession> sessions = chatSessionService.getSessionsByUser(userId);
+        return ResponseEntity.ok(BaseResponseDTO.success(sessions));
     }
 
     private String extractToken(HttpServletRequest request) {
