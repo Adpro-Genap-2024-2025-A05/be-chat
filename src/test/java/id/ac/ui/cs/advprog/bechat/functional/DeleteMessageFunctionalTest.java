@@ -15,6 +15,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -62,7 +63,7 @@ public class DeleteMessageFunctionalTest {
         message.setSession(session);
         message.setSenderId(senderId);
         message.setContent("Ini pesan yang akan dihapus");
-        message.setCreatedAt(LocalDateTime.now());
+        message.setCreatedAt(new Date());
         message.setDeleted(false);
         message.setEdited(false);
         message = chatMessageRepository.save(message);

@@ -11,6 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
@@ -20,12 +21,12 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(ChatSessionController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class ChatSessionControllerTest {
 
     @Autowired
@@ -69,7 +70,8 @@ class ChatSessionControllerTest {
         CreateSessionRequest request = new CreateSessionRequest();
         request.setCaregiver(dummySession.getCaregiver());
 
-        Mockito.when(chatSessionService.createSession(eq(dummyUserId), eq(dummySession.getCaregiver())))
+        // Tambahkan argumen ketiga: token
+        Mockito.when(chatSessionService.createSession(eq(dummyUserId), eq(dummySession.getCaregiver()), anyString()))
                 .thenReturn(dummySession);
 
         mockMvc.perform(post("/chat/session/create")

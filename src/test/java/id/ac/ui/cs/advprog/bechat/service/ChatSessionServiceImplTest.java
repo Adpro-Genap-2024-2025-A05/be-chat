@@ -1,6 +1,7 @@
 package id.ac.ui.cs.advprog.bechat.service;
 
 import id.ac.ui.cs.advprog.bechat.model.ChatSession;
+import id.ac.ui.cs.advprog.bechat.model.enums.Role;
 import id.ac.ui.cs.advprog.bechat.repository.ChatSessionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,31 +12,37 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 public class ChatSessionServiceImplTest {
 
     private ChatSessionRepository chatSessionRepository;
-    private ChatSessionService chatSessionService;
+    private TokenVerificationService tokenVerificationService;
+    private ChatSessionServiceImpl chatSessionService;
 
     @BeforeEach
     void setUp() {
         chatSessionRepository = mock(ChatSessionRepository.class);
-        chatSessionService = new ChatSessionServiceImpl(chatSessionRepository);
+        tokenVerificationService = mock(TokenVerificationService.class);
+        chatSessionService = new ChatSessionServiceImpl(chatSessionRepository, tokenVerificationService);
     }
 
     @Test
     void testCreateSession_shouldReturnSavedSession() {
-        UUID user1 = UUID.randomUUID();
-        UUID user2 = UUID.randomUUID();
+        UUID pacilianId = UUID.randomUUID();
+        UUID caregiverId = UUID.randomUUID();
+        String token = "faketoken";
+
+        when(tokenVerificationService.getRoleFromToken(token)).thenReturn(Role.PACILIAN);
 
         when(chatSessionRepository.save(any(ChatSession.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        ChatSession session = chatSessionService.createSession(user1, user2);
+        ChatSession session = chatSessionService.createSession(pacilianId, caregiverId, token);
 
-        assertEquals(user1, session.getPacilian());
-        assertEquals(user2, session.getCaregiver());
+        assertEquals(pacilianId, session.getPacilian());
+        assertEquals(caregiverId, session.getCaregiver());
         assertNotNull(session.getId());
         assertNotNull(session.getCreatedAt());
     }
