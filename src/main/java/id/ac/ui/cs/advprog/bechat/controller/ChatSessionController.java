@@ -12,10 +12,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 import java.util.List;
 import java.util.UUID;
 
+@CrossOrigin(origins = "*")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/chat/session")
@@ -36,6 +38,7 @@ public class ChatSessionController {
                 .body(BaseResponseDTO.success(HttpStatus.CREATED.value(), "Session created successfully", session));
     }
 
+    @CrossOrigin(origins = "*")
     @GetMapping("/user")
     public ResponseEntity<BaseResponseDTO<List<ChatSession>>> getSessionsForCurrentUser(HttpServletRequest httpRequest) {
         UUID userId = getUserIdFromRequest(httpRequest);
