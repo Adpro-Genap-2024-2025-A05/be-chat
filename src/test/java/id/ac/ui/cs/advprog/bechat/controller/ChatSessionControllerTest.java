@@ -78,7 +78,7 @@ class ChatSessionControllerTest {
                         .header("Authorization", DUMMY_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data.pacilian").value(dummyUserId.toString()))
                 .andExpect(jsonPath("$.data.caregiver").value(dummySession.getCaregiver().toString()));
     }

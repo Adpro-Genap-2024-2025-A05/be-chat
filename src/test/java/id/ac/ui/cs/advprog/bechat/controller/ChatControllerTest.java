@@ -81,7 +81,7 @@ class ChatControllerTest {
                         .header("Authorization", "Bearer " + DUMMY_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data.content", is("Halo Dunia")));
     }
 

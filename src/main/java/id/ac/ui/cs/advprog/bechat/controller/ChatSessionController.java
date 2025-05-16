@@ -9,6 +9,7 @@ import id.ac.ui.cs.advprog.bechat.service.TokenVerificationService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,15 +32,15 @@ public class ChatSessionController {
         String token = extractToken(httpRequest);
         UUID userId = getUserIdFromRequest(httpRequest);
         ChatSession session = chatSessionService.createSession(userId, request.getCaregiver(), token);
-        return ResponseEntity.ok(BaseResponseDTO.success(session));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(BaseResponseDTO.success(HttpStatus.CREATED.value(), "Session created successfully", session));
     }
-
 
     @GetMapping("/user")
     public ResponseEntity<BaseResponseDTO<List<ChatSession>>> getSessionsForCurrentUser(HttpServletRequest httpRequest) {
         UUID userId = getUserIdFromRequest(httpRequest);
         List<ChatSession> sessions = chatSessionService.getSessionsByUser(userId);
-        return ResponseEntity.ok(BaseResponseDTO.success(sessions));
+        return ResponseEntity.ok(BaseResponseDTO.success(HttpStatus.OK.value(), "Sessions retrieved", sessions));
     }
 
     private String extractToken(HttpServletRequest request) {

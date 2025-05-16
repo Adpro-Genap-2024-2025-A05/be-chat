@@ -19,10 +19,10 @@ public class BaseResponseDTO<T> {
 
     private T data;
 
-    public static <T> BaseResponseDTO<T> success(T data) {
+    public static <T> BaseResponseDTO<T> success(int status, String message, T data) {
         return BaseResponseDTO.<T>builder()
-                .status(200)
-                .message("Success")
+                .status(status)
+                .message(message)
                 .timestamp(new Date())
                 .data(data)
                 .build();

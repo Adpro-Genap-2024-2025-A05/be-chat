@@ -7,6 +7,7 @@ import id.ac.ui.cs.advprog.bechat.service.TokenVerificationService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,7 +29,8 @@ public class ChatController {
     ) {
         UUID userId = getUserIdFromRequest(request);
         ChatMessage saved = chatService.sendMessage(dto, userId);
-        return ResponseEntity.ok(BaseResponseDTO.success(saved));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(BaseResponseDTO.success(HttpStatus.CREATED.value(), "Message sent successfully", saved));
     }
 
     @GetMapping("/session/{id}")
@@ -38,7 +40,7 @@ public class ChatController {
     ) {
         UUID userId = getUserIdFromRequest(request);
         List<ChatMessage> messages = chatService.getMessages(id, userId);
-        return ResponseEntity.ok(BaseResponseDTO.success(messages));
+        return ResponseEntity.ok(BaseResponseDTO.success(HttpStatus.OK.value(), "Messages retrieved", messages));
     }
 
     @PutMapping("/message/{id}")
@@ -49,7 +51,7 @@ public class ChatController {
     ) {
         UUID userId = getUserIdFromRequest(request);
         ChatMessage updated = chatService.editMessage(id, requestBody.getContent(), userId);
-        return ResponseEntity.ok(BaseResponseDTO.success(updated));
+        return ResponseEntity.ok(BaseResponseDTO.success(HttpStatus.OK.value(), "Message updated", updated));
     }
 
     @DeleteMapping("/message/{id}")
@@ -59,7 +61,7 @@ public class ChatController {
     ) {
         UUID userId = getUserIdFromRequest(request);
         ChatMessage deleted = chatService.deleteMessage(id, userId);
-        return ResponseEntity.ok(BaseResponseDTO.success(deleted));
+        return ResponseEntity.ok(BaseResponseDTO.success(HttpStatus.OK.value(), "Message deleted", deleted));
     }
 
     private String extractToken(HttpServletRequest request) {

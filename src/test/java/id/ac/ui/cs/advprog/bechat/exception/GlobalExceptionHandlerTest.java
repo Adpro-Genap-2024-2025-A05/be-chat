@@ -3,6 +3,7 @@ package id.ac.ui.cs.advprog.bechat.exception;
 import id.ac.ui.cs.advprog.bechat.dto.BaseResponseDTO;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.Path;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,7 +24,6 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void testHandleValidationErrors_returnsBadRequestAndErrors() {
-        // Mock field error
         FieldError error = new FieldError("object", "field", "must not be blank");
         BindingResult bindingResult = mock(BindingResult.class);
         when(bindingResult.getFieldErrors()).thenReturn(List.of(error));
@@ -35,22 +35,26 @@ class GlobalExceptionHandlerTest {
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals("Validation error", response.getBody().getMessage());
+        assertEquals("Validation failed on input fields", response.getBody().getMessage());
         assertEquals("must not be blank", response.getBody().getData().get("field"));
     }
 
     @Test
     void testHandleConstraintViolation_returnsBadRequest() {
         ConstraintViolation<?> violation = mock(ConstraintViolation.class);
+        Path mockPath = mock(Path.class);
+        when(mockPath.toString()).thenReturn("field");
+        when(violation.getPropertyPath()).thenReturn(mockPath);
         when(violation.getMessage()).thenReturn("field is invalid");
 
         ConstraintViolationException ex = new ConstraintViolationException(Set.of(violation));
 
-        ResponseEntity<BaseResponseDTO<String>> response = handler.handleConstraintViolation(ex);
+        ResponseEntity<BaseResponseDTO<Map<String, String>>> response = handler.handleConstraintViolation(ex);
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertNotNull(response.getBody());
         assertTrue(response.getBody().getMessage().contains("Constraint violation"));
+        assertEquals("field is invalid", response.getBody().getData().get("field"));
     }
 
     @Test
@@ -72,7 +76,7 @@ class GlobalExceptionHandlerTest {
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals("Null value encountered", response.getBody().getMessage());
+        assertEquals("Unexpected null value", response.getBody().getMessage());
     }
 
     @Test
@@ -82,7 +86,7 @@ class GlobalExceptionHandlerTest {
         ResponseEntity<BaseResponseDTO<String>> response = handler.handleIllegalArgument(ex);
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertEquals("Bad input", response.getBody().getMessage());
+        assertEquals("Bad request: Bad input", response.getBody().getMessage());
     }
 
     @Test
@@ -92,7 +96,7 @@ class GlobalExceptionHandlerTest {
         ResponseEntity<BaseResponseDTO<String>> response = handler.handleIllegalState(ex);
 
         assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
-        assertEquals("Invalid state", response.getBody().getMessage());
+        assertEquals("Invalid state: Invalid state", response.getBody().getMessage());
     }
 
     @Test
@@ -102,7 +106,7 @@ class GlobalExceptionHandlerTest {
         ResponseEntity<BaseResponseDTO<String>> response = handler.handleSecurity(ex);
 
         assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
-        assertEquals("Forbidden access", response.getBody().getMessage());
+        assertEquals("Access denied: Forbidden access", response.getBody().getMessage());
     }
 
     @Test
@@ -112,6 +116,6 @@ class GlobalExceptionHandlerTest {
         ResponseEntity<BaseResponseDTO<String>> response = handler.handleAuthentication(ex);
 
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
-        assertEquals("Invalid token", response.getBody().getMessage());
+        assertEquals("Authentication failed: Invalid token", response.getBody().getMessage());
     }
 }
