@@ -8,7 +8,6 @@ import id.ac.ui.cs.advprog.bechat.repository.ChatSessionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -33,7 +32,6 @@ public class ChatServiceImpl implements ChatService {
         message.setSession(session);
         message.setSenderId(senderId);
         message.setContent(dto.getContent());
-        message.setCreatedAt(new Date());
         message.setEdited(false);
         message.setDeleted(false);
 

@@ -88,7 +88,6 @@ class ChatServiceImplTest {
 
         assertEquals("New", result.getContent());
         assertTrue(result.isEdited());
-        assertNotNull(result.getEditedAt());
     }
 
     @Test

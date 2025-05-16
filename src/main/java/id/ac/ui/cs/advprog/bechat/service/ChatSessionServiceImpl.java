@@ -6,7 +6,6 @@ import id.ac.ui.cs.advprog.bechat.repository.ChatSessionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -52,7 +51,6 @@ public class ChatSessionServiceImpl implements ChatSessionService {
                     session.setId(UUID.randomUUID());
                     session.setPacilian(pacilian);
                     session.setCaregiver(caregiver);
-                    session.setCreatedAt(LocalDateTime.now());
                     return chatSessionRepository.save(session);
                 });
     }

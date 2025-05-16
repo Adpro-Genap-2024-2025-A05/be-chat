@@ -44,7 +44,6 @@ public class ChatSessionServiceImplTest {
         assertEquals(pacilianId, session.getPacilian());
         assertEquals(caregiverId, session.getCaregiver());
         assertNotNull(session.getId());
-        assertNotNull(session.getCreatedAt());
     }
 
     @Test
