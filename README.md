@@ -2,6 +2,12 @@
 
 - BeChat adalah microservice untuk menangani fitur percakapan (chat) antara dua pengguna, seperti pasien (Pacillians) dan dokter (CareGiver)
 ---
+#### Fitur Chat antara Pacillians and CareGiver
+*Developed by: Cleo Excellen Iskandar*
+- Component Diagram
+  ![Rating Component Diagram](src/main/resources/assets/component_diagram.jpg)
+- Code Diagram
+  ![Rating Code Diagram](src/main/resources/assets/code_diagram.png)
 
 ## Deployment
 
@@ -62,4 +68,3 @@ Aplikasi ini menggunakan pendekatan **Layered Architecture** yang memisahkan tan
 | GET    | `/chat/session/{sessionId}`                                           | Mendapatkan semua pesan dalam satu sesi chat        |
 | PUT    | `/chat/message/{messageId}`                                           | Mengedit isi pesan berdasarkan `messageId`          |
 | DELETE | `/chat/message/{messageId}`                                           | Menghapus pesan berdasarkan `messageId`             |
-| DELETE | `/chat/session/{sessionId}`                                           | Menghapus session berdasarkan `sessionId`           |
