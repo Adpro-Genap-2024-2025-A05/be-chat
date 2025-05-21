@@ -26,7 +26,13 @@ public class ChatSession {
     private UUID pacilian;
 
     @Column(nullable = false)
+    private String pacilianName;
+
+    @Column(nullable = false)
     private UUID caregiver;
+
+    @Column(nullable = false)
+    private String caregiverName;
 
     @CreationTimestamp
     @Temporal(TemporalType.TIMESTAMP)

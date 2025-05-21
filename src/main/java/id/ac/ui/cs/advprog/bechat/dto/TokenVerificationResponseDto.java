@@ -13,6 +13,7 @@ public class TokenVerificationResponseDto {
     private boolean valid;
     private String userId;
     private String email;
+    private String name;
     private Role role;
     private Long expiresIn;
 }

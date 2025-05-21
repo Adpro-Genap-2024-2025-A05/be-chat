@@ -26,40 +26,42 @@ public class TokenVerificationService {
             if (isTokenExpired(token)) {
                 throw new AuthenticationException("Token has expired");
             }
-            
+    
             Claims claims = extractAllClaims(token);
-            
-            String email = extractUsername(token); 
+    
+            String email = extractUsername(token);
             String userId = claims.get("id", String.class);
             String roleStr = claims.get("role", String.class);
-            
-            if (userId == null || roleStr == null) {
+            String name = claims.get("name", String.class); 
+    
+            if (userId == null || roleStr == null || name == null) {
                 throw new AuthenticationException("Invalid token: missing required claims");
             }
-            
+    
             if (!Role.contains(roleStr)) {
                 throw new AuthenticationException("Invalid role in token: " + roleStr);
             }
-            
+    
             Role role = Role.valueOf(roleStr);
             
             long expiresIn = getRemainingTime(token);
-            
+    
             return TokenVerificationResponseDto.builder()
                     .valid(true)
                     .userId(userId)
                     .email(email)
                     .role(role)
                     .expiresIn(expiresIn)
+                    .name(name) 
                     .build();
-            
+    
         } catch (ExpiredJwtException e) {
             throw new AuthenticationException("Token has expired");
         } catch (Exception e) {
             throw new AuthenticationException("Error verifying token: " + e.getMessage());
         }
     }
-
+    
     public UUID getUserIdFromToken(String token) {
         TokenVerificationResponseDto verification = verifyToken(token);
         return UUID.fromString(verification.getUserId());

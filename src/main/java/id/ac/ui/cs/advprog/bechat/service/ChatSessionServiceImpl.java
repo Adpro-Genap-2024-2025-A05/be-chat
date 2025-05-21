@@ -1,5 +1,6 @@
 package id.ac.ui.cs.advprog.bechat.service;
 
+import id.ac.ui.cs.advprog.bechat.dto.TokenVerificationResponseDto;
 import id.ac.ui.cs.advprog.bechat.model.ChatSession;
 import id.ac.ui.cs.advprog.bechat.model.enums.Role;
 import id.ac.ui.cs.advprog.bechat.repository.ChatSessionRepository;
@@ -16,6 +17,7 @@ public class ChatSessionServiceImpl implements ChatSessionService {
 
     private final ChatSessionRepository chatSessionRepository;
     private final TokenVerificationService tokenVerificationService;
+    private final CaregiverInfoService CaregiverInfoService;
 
     @Override
     public ChatSession createSession(UUID pacilian, UUID caregiver, String token) {
@@ -44,6 +46,10 @@ public class ChatSessionServiceImpl implements ChatSessionService {
         if (pacilianRole != Role.PACILIAN || caregiverRole != Role.CAREGIVER) {
             throw new IllegalArgumentException("Only PACILIAN can create session with CAREGIVER");
         }
+        TokenVerificationResponseDto pacilianInfo = tokenVerificationService.verifyToken(token);
+        String pacilianName = pacilianInfo.getName();
+        
+        String caregiverName = CaregiverInfoService.getNameByUserIdCaregiver(caregiver, token);
 
         return findSession(pacilian, caregiver)
                 .orElseGet(() -> {
@@ -51,6 +57,8 @@ public class ChatSessionServiceImpl implements ChatSessionService {
                     session.setId(UUID.randomUUID());
                     session.setPacilian(pacilian);
                     session.setCaregiver(caregiver);
+                    session.setPacilianName(pacilianName);
+                    session.setCaregiverName(caregiverName);
                     return chatSessionRepository.save(session);
                 });
     }

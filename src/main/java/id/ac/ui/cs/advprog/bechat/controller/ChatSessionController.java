@@ -6,39 +6,53 @@ import id.ac.ui.cs.advprog.bechat.dto.TokenVerificationResponseDto;
 import id.ac.ui.cs.advprog.bechat.model.ChatSession;
 import id.ac.ui.cs.advprog.bechat.service.ChatSessionService;
 import id.ac.ui.cs.advprog.bechat.service.TokenVerificationService;
+import id.ac.ui.cs.advprog.bechat.service.CaregiverInfoService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.bind.annotation.CrossOrigin;
 
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
-@CrossOrigin(origins = "*")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/chat/session")
+@CrossOrigin(origins = "*")
 public class ChatSessionController {
 
     private final ChatSessionService chatSessionService;
     private final TokenVerificationService tokenService;
+    private final CaregiverInfoService caregiverInfoService;
 
     @PostMapping("/create")
-    public ResponseEntity<BaseResponseDTO<ChatSession>> createSession(
+    public ResponseEntity<BaseResponseDTO<Object>> createSession(
             @Valid @RequestBody CreateSessionRequest request,
             HttpServletRequest httpRequest
     ) {
         String token = extractToken(httpRequest);
-        UUID userId = getUserIdFromRequest(httpRequest);
-        ChatSession session = chatSessionService.createSession(userId, request.getCaregiver(), token);
+        UUID pacilianId = getUserIdFromToken(token);
+        ChatSession session = chatSessionService.createSession(pacilianId, request.getCaregiver(), token);
+
+        TokenVerificationResponseDto pacilianInfo = tokenService.verifyToken(token);
+        String pacilianName = pacilianInfo.getName();
+
+        String caregiverName = caregiverInfoService.getNameByUserIdCaregiver(session.getCaregiver(), token);
+
+        Map<String, Object> responseData = new HashMap<>();
+        responseData.put("id", session.getId());
+        responseData.put("pacilian", session.getPacilian());
+        responseData.put("pacilianUsername", pacilianName);
+        responseData.put("caregiver", session.getCaregiver());
+        responseData.put("caregiverUsername", caregiverName);
+        responseData.put("createdAt", session.getCreatedAt());
+        responseData.put("messages", session.getMessages());
+
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(BaseResponseDTO.success(HttpStatus.CREATED.value(), "Session created successfully", session));
+                .body(BaseResponseDTO.success(HttpStatus.CREATED.value(), "Session created successfully", responseData));
     }
 
-    @CrossOrigin(origins = "*")
     @GetMapping("/user")
     public ResponseEntity<BaseResponseDTO<List<ChatSession>>> getSessionsForCurrentUser(HttpServletRequest httpRequest) {
         UUID userId = getUserIdFromRequest(httpRequest);
