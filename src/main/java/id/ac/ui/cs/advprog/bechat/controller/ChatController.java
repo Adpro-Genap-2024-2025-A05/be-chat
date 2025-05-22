@@ -10,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.bind.annotation.CrossOrigin;
 
 import java.util.List;
 import java.util.UUID;
@@ -36,13 +35,33 @@ public class ChatController {
     }
 
     @GetMapping("/session/{id}")
-    public ResponseEntity<BaseResponseDTO<List<ChatMessage>>> getMessages(
+    public ResponseEntity<BaseResponseDTO<ChatSessionWithMessagesDto>> getMessages(
             @PathVariable UUID id,
             HttpServletRequest request
     ) {
         UUID userId = getUserIdFromRequest(request);
         List<ChatMessage> messages = chatService.getMessages(id, userId);
-        return ResponseEntity.ok(BaseResponseDTO.success(HttpStatus.OK.value(), "Messages retrieved", messages));
+
+        if (messages.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(BaseResponseDTO.error(HttpStatus.NOT_FOUND.value(), "No messages found in this session"));
+        }
+
+        var session = messages.get(0).getSession();  
+
+        var responseDto = ChatSessionWithMessagesDto.builder()
+                .sessionId(session.getId())
+                .pacilian(session.getPacilian())
+                .pacilianName(session.getPacilianName())
+                .caregiver(session.getCaregiver())
+                .caregiverName(session.getCaregiverName())
+                .messages(messages)
+                .build();
+
+        return ResponseEntity.ok(BaseResponseDTO.success(
+                HttpStatus.OK.value(),
+                "Messages retrieved",
+                responseDto));
     }
 
     @PutMapping("/message/{id}")

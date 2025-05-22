@@ -22,18 +22,17 @@ public class TokenVerificationService {
     private String secretKey;
 
     public TokenVerificationResponseDto verifyToken(String token) {
+        
         try {
             if (isTokenExpired(token)) {
                 throw new AuthenticationException("Token has expired");
             }
     
             Claims claims = extractAllClaims(token);
-    
             String email = extractUsername(token);
             String userId = claims.get("id", String.class);
             String roleStr = claims.get("role", String.class);
             String name = claims.get("name", String.class); 
-    
             if (userId == null || roleStr == null || name == null) {
                 throw new AuthenticationException("Invalid token: missing required claims");
             }

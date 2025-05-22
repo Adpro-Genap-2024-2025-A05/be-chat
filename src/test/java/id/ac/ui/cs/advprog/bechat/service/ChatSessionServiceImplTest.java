@@ -25,7 +25,7 @@ public class ChatSessionServiceImplTest {
     void setUp() {
         chatSessionRepository = mock(ChatSessionRepository.class);
         tokenVerificationService = mock(TokenVerificationService.class);
-        chatSessionService = new ChatSessionServiceImpl(chatSessionRepository, tokenVerificationService);
+        chatSessionService = new ChatSessionServiceImpl(chatSessionRepository, tokenVerificationService, null);
     }
 
     @Test
