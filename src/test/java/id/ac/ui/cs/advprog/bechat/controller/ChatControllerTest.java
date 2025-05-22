@@ -5,6 +5,7 @@ import id.ac.ui.cs.advprog.bechat.dto.EditMessageRequest;
 import id.ac.ui.cs.advprog.bechat.dto.SendMessageRequest;
 import id.ac.ui.cs.advprog.bechat.dto.TokenVerificationResponseDto;
 import id.ac.ui.cs.advprog.bechat.model.ChatMessage;
+import id.ac.ui.cs.advprog.bechat.model.ChatSession;
 import id.ac.ui.cs.advprog.bechat.model.enums.Role;
 import id.ac.ui.cs.advprog.bechat.service.ChatService;
 import id.ac.ui.cs.advprog.bechat.service.TokenVerificationService;
@@ -29,7 +30,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(ChatController.class)
-@AutoConfigureMockMvc(addFilters = false) // Disable Spring Security filters for test
+@AutoConfigureMockMvc(addFilters = false) 
 class ChatControllerTest {
 
     @Autowired
@@ -90,14 +91,27 @@ class ChatControllerTest {
         UUID sessionId = UUID.randomUUID();
         List<ChatMessage> messages = Collections.singletonList(dummyMessage);
 
+        ChatSession dummySession = new ChatSession();
+        dummySession.setId(sessionId);
+        dummySession.setPacilian(dummyUserId);
+        dummySession.setPacilianName("Cleo");
+        dummySession.setCaregiver(UUID.randomUUID());
+        dummySession.setCaregiverName("Dr. Panda");
+        dummySession.setMessages(messages);
+
+        dummyMessage.setSession(dummySession); 
+
         Mockito.when(chatService.getMessages(eq(sessionId), eq(dummyUserId)))
                 .thenReturn(messages);
 
         mockMvc.perform(get("/chat/session/{id}", sessionId)
                         .header("Authorization", "Bearer " + DUMMY_TOKEN))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data[0].content", is("Halo Dunia")));
-    }
+                .andExpect(jsonPath("$.data.messages[0].content", is("Halo Dunia")))
+                .andExpect(jsonPath("$.data.pacilianName", is("Cleo")))
+                .andExpect(jsonPath("$.data.caregiverName", is("Dr. Panda")));
+        }
+
 
     @Test
     void testEditMessage() throws Exception {

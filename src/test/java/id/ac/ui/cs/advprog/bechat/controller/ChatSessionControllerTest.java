@@ -16,6 +16,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import id.ac.ui.cs.advprog.bechat.service.CaregiverInfoService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -38,6 +39,9 @@ class ChatSessionControllerTest {
     @MockBean
     private TokenVerificationService tokenVerificationService;
 
+    @MockBean
+    private CaregiverInfoService caregiverInfoService;
+
     @Autowired
     private ObjectMapper objectMapper;
 
@@ -59,10 +63,14 @@ class ChatSessionControllerTest {
                 .thenReturn(TokenVerificationResponseDto.builder()
                         .valid(true)
                         .userId(dummyUserId.toString())
+                        .name("Cleo")
                         .role(Role.PACILIAN)
                         .email("user@example.com")
                         .expiresIn(3600L)
                         .build());
+
+        Mockito.when(caregiverInfoService.getNameByUserIdCaregiver(dummySession.getCaregiver(), "faketoken"))
+                .thenReturn("Dr. Panda");
     }
 
     @Test
@@ -70,7 +78,6 @@ class ChatSessionControllerTest {
         CreateSessionRequest request = new CreateSessionRequest();
         request.setCaregiver(dummySession.getCaregiver());
 
-        // Tambahkan argumen ketiga: token
         Mockito.when(chatSessionService.createSession(eq(dummyUserId), eq(dummySession.getCaregiver()), anyString()))
                 .thenReturn(dummySession);
 
@@ -80,7 +87,9 @@ class ChatSessionControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data.pacilian").value(dummyUserId.toString()))
-                .andExpect(jsonPath("$.data.caregiver").value(dummySession.getCaregiver().toString()));
+                .andExpect(jsonPath("$.data.caregiver").value(dummySession.getCaregiver().toString()))
+                .andExpect(jsonPath("$.data.pacilianUsername").value("Cleo"))
+                .andExpect(jsonPath("$.data.caregiverUsername").value("Dr. Panda"));
     }
 
     @Test

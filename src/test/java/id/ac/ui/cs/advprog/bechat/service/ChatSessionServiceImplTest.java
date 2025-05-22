@@ -1,5 +1,6 @@
 package id.ac.ui.cs.advprog.bechat.service;
 
+import id.ac.ui.cs.advprog.bechat.dto.TokenVerificationResponseDto;
 import id.ac.ui.cs.advprog.bechat.model.ChatSession;
 import id.ac.ui.cs.advprog.bechat.model.enums.Role;
 import id.ac.ui.cs.advprog.bechat.repository.ChatSessionRepository;
@@ -19,13 +20,16 @@ public class ChatSessionServiceImplTest {
 
     private ChatSessionRepository chatSessionRepository;
     private TokenVerificationService tokenVerificationService;
+    private CaregiverInfoService caregiverInfoService;
     private ChatSessionServiceImpl chatSessionService;
 
     @BeforeEach
     void setUp() {
         chatSessionRepository = mock(ChatSessionRepository.class);
         tokenVerificationService = mock(TokenVerificationService.class);
-        chatSessionService = new ChatSessionServiceImpl(chatSessionRepository, tokenVerificationService, null);
+        caregiverInfoService = mock(CaregiverInfoService.class);
+
+        chatSessionService = new ChatSessionServiceImpl(chatSessionRepository, tokenVerificationService, caregiverInfoService);
     }
 
     @Test
@@ -36,6 +40,17 @@ public class ChatSessionServiceImplTest {
 
         when(tokenVerificationService.getRoleFromToken(token)).thenReturn(Role.PACILIAN);
 
+        TokenVerificationResponseDto pacilianInfo = TokenVerificationResponseDto.builder()
+                .userId(pacilianId.toString())
+                .name("Cleo")
+                .role(Role.PACILIAN)
+                .email("cleo@mail.com")
+                .valid(true)
+                .build();
+        when(tokenVerificationService.verifyToken(token)).thenReturn(pacilianInfo);
+
+        when(caregiverInfoService.getNameByUserIdCaregiver(caregiverId, token)).thenReturn("Dr. Panda");
+
         when(chatSessionRepository.save(any(ChatSession.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -43,6 +58,8 @@ public class ChatSessionServiceImplTest {
 
         assertEquals(pacilianId, session.getPacilian());
         assertEquals(caregiverId, session.getCaregiver());
+        assertEquals("Cleo", session.getPacilianName());
+        assertEquals("Dr. Panda", session.getCaregiverName());
         assertNotNull(session.getId());
     }
 
