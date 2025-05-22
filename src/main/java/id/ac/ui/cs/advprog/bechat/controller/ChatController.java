@@ -2,6 +2,7 @@ package id.ac.ui.cs.advprog.bechat.controller;
 
 import id.ac.ui.cs.advprog.bechat.dto.*;
 import id.ac.ui.cs.advprog.bechat.model.ChatMessage;
+import id.ac.ui.cs.advprog.bechat.model.ChatSession;
 import id.ac.ui.cs.advprog.bechat.service.ChatService;
 import id.ac.ui.cs.advprog.bechat.service.TokenVerificationService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -10,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.UUID;
@@ -42,12 +44,10 @@ public class ChatController {
         UUID userId = getUserIdFromRequest(request);
         List<ChatMessage> messages = chatService.getMessages(id, userId);
 
-        if (messages.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(BaseResponseDTO.error(HttpStatus.NOT_FOUND.value(), "No messages found in this session"));
-        }
-
-        var session = messages.get(0).getSession();  
+        ChatSession session = messages.isEmpty()
+                ? chatService.findSessionById(id)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found"))
+                : messages.get(0).getSession();
 
         var responseDto = ChatSessionWithMessagesDto.builder()
                 .sessionId(session.getId())

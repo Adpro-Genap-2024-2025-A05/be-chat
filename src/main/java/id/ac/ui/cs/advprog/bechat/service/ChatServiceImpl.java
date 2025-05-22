@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -79,5 +80,9 @@ public class ChatServiceImpl implements ChatService {
     public ChatSession getSessionById(UUID sessionId) {
         return chatSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new RuntimeException("Session not found"));
+    }
+    
+    public Optional<ChatSession> findSessionById(UUID sessionId) {
+        return chatSessionRepository.findById(sessionId);
     }
 }

@@ -5,6 +5,7 @@ import id.ac.ui.cs.advprog.bechat.model.ChatMessage;
 import id.ac.ui.cs.advprog.bechat.model.ChatSession;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface ChatService {
@@ -13,4 +14,5 @@ public interface ChatService {
     ChatMessage editMessage(UUID messageId, String newContent, UUID userId);
     ChatMessage deleteMessage(UUID messageId, UUID userId);
     ChatSession getSessionById(UUID sessionId);
+    Optional<ChatSession> findSessionById(UUID sessionId);
 }
