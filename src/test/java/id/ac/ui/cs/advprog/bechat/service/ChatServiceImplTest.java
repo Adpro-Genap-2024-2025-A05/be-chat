@@ -28,7 +28,7 @@ class ChatServiceImplTest {
     }
 
     @Test
-    void testSendMessage_success() {
+    void testSendMessage_success() throws Exception {
         UUID sessionId = UUID.randomUUID();
         UUID senderId = UUID.randomUUID();
 
@@ -43,7 +43,7 @@ class ChatServiceImplTest {
         when(chatSessionRepository.findById(sessionId)).thenReturn(Optional.of(session));
         when(chatMessageRepository.save(any(ChatMessage.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        ChatMessage result = chatService.sendMessage(request, senderId);
+        ChatMessage result = chatService.sendMessage(request, senderId).get();
 
         assertEquals("Halo Dunia", result.getContent());
         assertEquals(senderId, result.getSenderId());
@@ -69,11 +69,11 @@ class ChatServiceImplTest {
 
         when(chatSessionRepository.findById(sessionId)).thenReturn(Optional.of(session));
 
-        assertThrows(SecurityException.class, () -> chatService.sendMessage(request, senderId));
+        assertThrows(SecurityException.class, () -> chatService.sendMessage(request, senderId).join());
     }
 
     @Test
-    void testEditMessage_success() {
+    void testEditMessage_success() throws Exception {
         UUID messageId = UUID.randomUUID();
         UUID senderId = UUID.randomUUID();
         ChatMessage message = new ChatMessage();
@@ -84,7 +84,7 @@ class ChatServiceImplTest {
         when(chatMessageRepository.findById(messageId)).thenReturn(Optional.of(message));
         when(chatMessageRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        ChatMessage result = chatService.editMessage(messageId, "New", senderId);
+        ChatMessage result = chatService.editMessage(messageId, "New", senderId).get();
 
         assertEquals("New", result.getContent());
         assertTrue(result.isEdited());
@@ -99,11 +99,11 @@ class ChatServiceImplTest {
 
         when(chatMessageRepository.findById(messageId)).thenReturn(Optional.of(message));
 
-        assertThrows(SecurityException.class, () -> chatService.editMessage(messageId, "test", UUID.randomUUID()));
+        assertThrows(SecurityException.class, () -> chatService.editMessage(messageId, "test", UUID.randomUUID()).join());
     }
 
     @Test
-    void testDeleteMessage_success() {
+    void testDeleteMessage_success() throws Exception {
         UUID messageId = UUID.randomUUID();
         UUID senderId = UUID.randomUUID();
         ChatMessage message = new ChatMessage();
@@ -114,7 +114,7 @@ class ChatServiceImplTest {
         when(chatMessageRepository.findById(messageId)).thenReturn(Optional.of(message));
         when(chatMessageRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        ChatMessage result = chatService.deleteMessage(messageId, senderId);
+        ChatMessage result = chatService.deleteMessage(messageId, senderId).get();
 
         assertTrue(result.isDeleted());
         assertEquals("Pesan telah dihapus", result.getContent());
@@ -129,7 +129,7 @@ class ChatServiceImplTest {
 
         when(chatMessageRepository.findById(messageId)).thenReturn(Optional.of(message));
 
-        assertThrows(SecurityException.class, () -> chatService.deleteMessage(messageId, UUID.randomUUID()));
+        assertThrows(SecurityException.class, () -> chatService.deleteMessage(messageId, UUID.randomUUID()).join());
     }
 
     @Test
@@ -144,7 +144,7 @@ class ChatServiceImplTest {
 
         when(chatSessionRepository.findById(sessionId)).thenReturn(Optional.of(session));
 
-        assertThrows(SecurityException.class, () -> chatService.getMessages(sessionId, userId));
+        assertThrows(SecurityException.class, () -> chatService.getMessages(sessionId, userId).join());
     }
 
     @Test
