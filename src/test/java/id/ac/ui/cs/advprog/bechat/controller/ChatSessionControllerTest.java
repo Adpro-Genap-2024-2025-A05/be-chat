@@ -81,7 +81,7 @@ class ChatSessionControllerTest {
         Mockito.when(chatSessionService.createSession(eq(dummyUserId), eq(dummySession.getCaregiver()), anyString()))
                 .thenReturn(dummySession);
 
-        mockMvc.perform(post("/chat/session/create")
+        mockMvc.perform(post("/api/chat/session/create")
                         .header("Authorization", DUMMY_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -97,7 +97,7 @@ class ChatSessionControllerTest {
         Mockito.when(chatSessionService.getSessionsByUser(eq(dummyUserId)))
                 .thenReturn(List.of(dummySession));
 
-        mockMvc.perform(get("/chat/session/user")
+        mockMvc.perform(get("/api/chat/session/user")
                         .header("Authorization", DUMMY_TOKEN))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data[0].pacilian").value(dummyUserId.toString()));

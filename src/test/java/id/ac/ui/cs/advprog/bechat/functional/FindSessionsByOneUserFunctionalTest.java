@@ -64,7 +64,7 @@ public class FindSessionsByOneUserFunctionalTest {
 
     @Test
     void getSessionsByUser_shouldReturnCorrectSessions() throws Exception {
-        mockMvc.perform(get("/chat/session/user")
+        mockMvc.perform(get("/api/chat/session/user")
                         .header("Authorization", DUMMY_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -73,7 +73,7 @@ public class FindSessionsByOneUserFunctionalTest {
 
     @Test
     void getSessionsByUser_shouldReturnEmptyArrayIfNone() throws Exception {
-        mockMvc.perform(get("/chat/session/user")
+        mockMvc.perform(get("/api/chat/session/user")
                         .header("Authorization", "Bearer token-for-unknown-user")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())

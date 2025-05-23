@@ -67,7 +67,7 @@ class EditMessageFunctionalTest {
         EditMessageRequest request = new EditMessageRequest();
         request.setContent("Pesan diedit");
 
-        mockMvc.perform(put("/chat/message/" + message.getId())
+        mockMvc.perform(put("/api/chat/message/" + message.getId())
                         .header("Authorization", FAKE_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -83,14 +83,14 @@ class EditMessageFunctionalTest {
 
     @Test
     void testEditDeletedMessage_shouldReturnBadRequest() throws Exception {
-        mockMvc.perform(delete("/chat/message/" + message.getId())
+        mockMvc.perform(delete("/api/chat/message/" + message.getId())
                         .header("Authorization", FAKE_TOKEN))
                 .andExpect(status().isOk());
 
         EditMessageRequest request = new EditMessageRequest();
         request.setContent("Percobaan edit setelah dihapus");
 
-        mockMvc.perform(put("/chat/message/" + message.getId())
+        mockMvc.perform(put("/api/chat/message/" + message.getId())
                         .header("Authorization", FAKE_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -103,7 +103,7 @@ class EditMessageFunctionalTest {
         EditMessageRequest firstEdit = new EditMessageRequest();
         firstEdit.setContent("Pesan telah diedit pertama kali");
 
-        mockMvc.perform(put("/chat/message/" + message.getId())
+        mockMvc.perform(put("/api/chat/message/" + message.getId())
                         .header("Authorization", FAKE_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(firstEdit)))
@@ -112,7 +112,7 @@ class EditMessageFunctionalTest {
         EditMessageRequest secondEdit = new EditMessageRequest();
         secondEdit.setContent("Pesan diedit ulang");
 
-        mockMvc.perform(put("/chat/message/" + message.getId())
+        mockMvc.perform(put("/api/chat/message/" + message.getId())
                         .header("Authorization", FAKE_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(secondEdit)))
@@ -130,7 +130,7 @@ class EditMessageFunctionalTest {
         EditMessageRequest request = new EditMessageRequest();
         request.setContent("Percobaan edit");
 
-        mockMvc.perform(put("/chat/message/" + message.getId())
+        mockMvc.perform(put("/api/chat/message/" + message.getId())
                         .header("Authorization", FAKE_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))

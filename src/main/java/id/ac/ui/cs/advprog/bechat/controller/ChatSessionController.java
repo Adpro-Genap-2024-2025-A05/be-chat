@@ -18,7 +18,7 @@ import java.util.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/chat/session")
+@RequestMapping("/api/chat/session")
 @CrossOrigin(origins = "*")
 public class ChatSessionController {
 

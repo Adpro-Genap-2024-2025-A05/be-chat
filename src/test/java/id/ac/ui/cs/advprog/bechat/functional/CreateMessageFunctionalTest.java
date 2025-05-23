@@ -58,7 +58,7 @@ public class CreateMessageFunctionalTest {
         request.setSessionId(session.getId());
         request.setContent("di aeon"); 
 
-        mockMvc.perform(post("/chat/send")
+        mockMvc.perform(post("/api/chat/send")
                         .header("Authorization", FAKE_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))

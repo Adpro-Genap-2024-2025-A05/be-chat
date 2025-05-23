@@ -53,7 +53,7 @@ public class CreateSessionFunctionalTest {
         CreateSessionRequest request = new CreateSessionRequest();
         request.setCaregiver(caregiver); 
 
-        mockMvc.perform(post("/chat/session/create")
+        mockMvc.perform(post("/api/chat/session/create")
                         .header("Authorization", FAKE_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))

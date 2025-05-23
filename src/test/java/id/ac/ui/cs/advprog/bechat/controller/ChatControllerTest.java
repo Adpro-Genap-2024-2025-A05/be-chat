@@ -82,7 +82,7 @@ public class ChatControllerTest {
         Mockito.when(chatService.sendMessage(any(SendMessageRequest.class), eq(dummyUserId)))
                 .thenReturn(CompletableFuture.completedFuture(dummyMessage));
 
-        MvcResult result = mockMvc.perform(post("/chat/send")
+        MvcResult result = mockMvc.perform(post("/api/chat/send")
                         .header("Authorization", "Bearer " + DUMMY_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -106,7 +106,7 @@ public class ChatControllerTest {
         Mockito.when(chatService.editMessage(eq(messageId), eq("Pesan diedit"), eq(dummyUserId)))
                 .thenReturn(CompletableFuture.completedFuture(dummyMessage));
 
-        MvcResult result = mockMvc.perform(put("/chat/message/{id}", messageId)
+        MvcResult result = mockMvc.perform(put("/api/chat/message/{id}", messageId)
                         .header("Authorization", "Bearer " + DUMMY_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -127,7 +127,7 @@ public class ChatControllerTest {
         Mockito.when(chatService.deleteMessage(eq(messageId), eq(dummyUserId)))
                 .thenReturn(CompletableFuture.completedFuture(dummyMessage));
 
-        MvcResult result = mockMvc.perform(delete("/chat/message/{id}", messageId)
+        MvcResult result = mockMvc.perform(delete("/api/chat/message/{id}", messageId)
                         .header("Authorization", "Bearer " + DUMMY_TOKEN))
                 .andExpect(request().asyncStarted())
                 .andReturn();
@@ -154,7 +154,7 @@ public class ChatControllerTest {
         Mockito.when(chatService.getMessages(eq(sessionId), eq(dummyUserId)))
                 .thenReturn(CompletableFuture.completedFuture(messages));
 
-        MvcResult result = mockMvc.perform(get("/chat/session/{id}", sessionId)
+        MvcResult result = mockMvc.perform(get("/api/chat/session/{id}", sessionId)
                         .header("Authorization", "Bearer " + DUMMY_TOKEN))
                 .andExpect(request().asyncStarted())
                 .andReturn();

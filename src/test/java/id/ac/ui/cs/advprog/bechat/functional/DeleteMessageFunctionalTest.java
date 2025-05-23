@@ -71,7 +71,7 @@ public class DeleteMessageFunctionalTest {
 
     @Test
     void deleteMessage_shouldMarkMessageAsDeleted() throws Exception {
-        mockMvc.perform(delete("/chat/message/" + message.getId())
+        mockMvc.perform(delete("/api/chat/message/" + message.getId())
                         .header("Authorization", FAKE_TOKEN))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.deleted").value(true))
@@ -87,13 +87,13 @@ public class DeleteMessageFunctionalTest {
         EditMessageRequest editRequest = new EditMessageRequest();
         editRequest.setContent("Sudah diedit sebelumnya");
 
-        mockMvc.perform(put("/chat/message/" + message.getId())
+        mockMvc.perform(put("/api/chat/message/" + message.getId())
                         .header("Authorization", FAKE_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(editRequest)))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(delete("/chat/message/" + message.getId())
+        mockMvc.perform(delete("/api/chat/message/" + message.getId())
                         .header("Authorization", FAKE_TOKEN))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.deleted").value(true))
@@ -105,7 +105,7 @@ public class DeleteMessageFunctionalTest {
         message.setDeleted(true);
         chatMessageRepository.save(message);
 
-        mockMvc.perform(delete("/chat/message/" + message.getId())
+        mockMvc.perform(delete("/api/chat/message/" + message.getId())
                         .header("Authorization", FAKE_TOKEN))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Message sudah dihapus"));

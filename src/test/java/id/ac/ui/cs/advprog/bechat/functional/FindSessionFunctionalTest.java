@@ -54,7 +54,7 @@ public class FindSessionFunctionalTest {
 
     @Test
     void findSession_shouldReturnSessionIfExists() throws Exception {
-        mockMvc.perform(get("/chat/session/find")
+        mockMvc.perform(get("/api/chat/session/find")
                         .param("user1", pacilian.toString())
                         .param("user2", caregiver.toString())
                         .header("Authorization", FAKE_TOKEN)
@@ -69,7 +69,7 @@ public class FindSessionFunctionalTest {
         UUID otherUser1 = UUID.randomUUID();
         UUID otherUser2 = UUID.randomUUID();
 
-        mockMvc.perform(get("/chat/session/find")
+        mockMvc.perform(get("/api/chat/session/find")
                         .param("user1", otherUser1.toString())
                         .param("user2", otherUser2.toString())
                         .header("Authorization", FAKE_TOKEN)
