@@ -15,6 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/chat")
@@ -26,63 +27,59 @@ public class ChatController {
     private final TokenVerificationService tokenVerificationService;
 
     @PostMapping("/send")
-    public ResponseEntity<BaseResponseDTO<ChatMessage>> sendMessage(
+    public CompletableFuture<ResponseEntity<BaseResponseDTO<ChatMessage>>> sendMessage(
             @Valid @RequestBody SendMessageRequest dto,
             HttpServletRequest request
     ) {
         UUID userId = getUserIdFromRequest(request);
-        ChatMessage saved = chatService.sendMessage(dto, userId);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(BaseResponseDTO.success(HttpStatus.CREATED.value(), "Message sent successfully", saved));
+        return chatService.sendMessage(dto, userId)
+                .thenApply(saved ->
+                        ResponseEntity.status(HttpStatus.CREATED)
+                                .body(BaseResponseDTO.success(HttpStatus.CREATED.value(), "Message sent successfully", saved)));
     }
 
     @GetMapping("/session/{id}")
-    public ResponseEntity<BaseResponseDTO<ChatSessionWithMessagesDto>> getMessages(
+    public CompletableFuture<ResponseEntity<BaseResponseDTO<ChatSessionWithMessagesDto>>> getMessages(
             @PathVariable UUID id,
             HttpServletRequest request
     ) {
         UUID userId = getUserIdFromRequest(request);
-        List<ChatMessage> messages = chatService.getMessages(id, userId);
+        return chatService.getMessages(id, userId).thenCompose(messages -> {
+            if (messages.isEmpty()) {
+                return chatService.findSessionById(id).thenApply(optionalSession -> {
+                    ChatSession session = optionalSession.orElseThrow(() ->
+                            new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found"));
 
-        ChatSession session = messages.isEmpty()
-                ? chatService.findSessionById(id)
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found"))
-                : messages.get(0).getSession();
-
-        var responseDto = ChatSessionWithMessagesDto.builder()
-                .sessionId(session.getId())
-                .pacilian(session.getPacilian())
-                .pacilianName(session.getPacilianName())
-                .caregiver(session.getCaregiver())
-                .caregiverName(session.getCaregiverName())
-                .messages(messages)
-                .build();
-
-        return ResponseEntity.ok(BaseResponseDTO.success(
-                HttpStatus.OK.value(),
-                "Messages retrieved",
-                responseDto));
+                    return buildSessionWithMessagesResponse(session, List.of());
+                });
+            } else {
+                ChatSession session = messages.get(0).getSession();
+                return CompletableFuture.completedFuture(buildSessionWithMessagesResponse(session, messages));
+            }
+        });
     }
 
     @PutMapping("/message/{id}")
-    public ResponseEntity<BaseResponseDTO<ChatMessage>> editMessage(
+    public CompletableFuture<ResponseEntity<BaseResponseDTO<ChatMessage>>> editMessage(
             @PathVariable UUID id,
             @Valid @RequestBody EditMessageRequest requestBody,
             HttpServletRequest request
     ) {
         UUID userId = getUserIdFromRequest(request);
-        ChatMessage updated = chatService.editMessage(id, requestBody.getContent(), userId);
-        return ResponseEntity.ok(BaseResponseDTO.success(HttpStatus.OK.value(), "Message updated", updated));
+        return chatService.editMessage(id, requestBody.getContent(), userId)
+                .thenApply(updated ->
+                        ResponseEntity.ok(BaseResponseDTO.success(HttpStatus.OK.value(), "Message updated", updated)));
     }
 
     @DeleteMapping("/message/{id}")
-    public ResponseEntity<BaseResponseDTO<ChatMessage>> deleteMessage(
+    public CompletableFuture<ResponseEntity<BaseResponseDTO<ChatMessage>>> deleteMessage(
             @PathVariable UUID id,
             HttpServletRequest request
     ) {
         UUID userId = getUserIdFromRequest(request);
-        ChatMessage deleted = chatService.deleteMessage(id, userId);
-        return ResponseEntity.ok(BaseResponseDTO.success(HttpStatus.OK.value(), "Message deleted", deleted));
+        return chatService.deleteMessage(id, userId)
+                .thenApply(deleted ->
+                        ResponseEntity.ok(BaseResponseDTO.success(HttpStatus.OK.value(), "Message deleted", deleted)));
     }
 
     private String extractToken(HttpServletRequest request) {
@@ -97,5 +94,18 @@ public class ChatController {
         String token = extractToken(request);
         TokenVerificationResponseDto verification = tokenVerificationService.verifyToken(token);
         return UUID.fromString(verification.getUserId());
+    }
+
+    private ResponseEntity<BaseResponseDTO<ChatSessionWithMessagesDto>> buildSessionWithMessagesResponse(ChatSession session, List<ChatMessage> messages) {
+        var responseDto = ChatSessionWithMessagesDto.builder()
+                .sessionId(session.getId())
+                .pacilian(session.getPacilian())
+                .pacilianName(session.getPacilianName())
+                .caregiver(session.getCaregiver())
+                .caregiverName(session.getCaregiverName())
+                .messages(messages)
+                .build();
+
+        return ResponseEntity.ok(BaseResponseDTO.success(HttpStatus.OK.value(), "Messages retrieved", responseDto));
     }
 }

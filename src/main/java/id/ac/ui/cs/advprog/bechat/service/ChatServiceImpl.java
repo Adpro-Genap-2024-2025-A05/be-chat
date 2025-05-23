@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.scheduling.annotation.Async;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor
@@ -20,7 +22,8 @@ public class ChatServiceImpl implements ChatService {
     private final ChatSessionRepository chatSessionRepository;
 
     @Override
-    public ChatMessage sendMessage(SendMessageRequest dto, UUID senderId) {
+    @Async
+    public CompletableFuture<ChatMessage> sendMessage(SendMessageRequest dto, UUID senderId) {
         ChatSession session = chatSessionRepository.findById(dto.getSessionId())
                 .orElseThrow(() -> new RuntimeException("Session not found"));
 
@@ -36,22 +39,25 @@ public class ChatServiceImpl implements ChatService {
         message.setEdited(false);
         message.setDeleted(false);
 
-        return chatMessageRepository.save(message);
+        return CompletableFuture.completedFuture(chatMessageRepository.save(message));
     }
 
     @Override
-    public List<ChatMessage> getMessages(UUID sessionId, UUID userId) {
+    @Async
+    public CompletableFuture<List<ChatMessage>> getMessages(UUID sessionId, UUID userId) {
         ChatSession session = getSessionById(sessionId);
 
         if (!session.getPacilian().equals(userId) && !session.getCaregiver().equals(userId)) {
             throw new SecurityException("You do not have access to this session.");
         }
 
-        return chatMessageRepository.findBySessionIdOrderByCreatedAtAsc(sessionId);
+        return CompletableFuture.completedFuture(
+                chatMessageRepository.findBySessionIdOrderByCreatedAtAsc(sessionId));
     }
 
     @Override
-    public ChatMessage editMessage(UUID messageId, String newContent, UUID userId) {
+    @Async
+    public CompletableFuture<ChatMessage> editMessage(UUID messageId, String newContent, UUID userId) {
         ChatMessage message = chatMessageRepository.findById(messageId)
                 .orElseThrow(() -> new RuntimeException("Message not found"));
 
@@ -60,11 +66,12 @@ public class ChatServiceImpl implements ChatService {
         }
 
         message.edit(newContent);
-        return chatMessageRepository.save(message);
+        return CompletableFuture.completedFuture(chatMessageRepository.save(message));
     }
 
     @Override
-    public ChatMessage deleteMessage(UUID messageId, UUID userId) {
+    @Async
+    public CompletableFuture<ChatMessage> deleteMessage(UUID messageId, UUID userId) {
         ChatMessage message = chatMessageRepository.findById(messageId)
                 .orElseThrow(() -> new RuntimeException("Message not found"));
 
@@ -73,7 +80,7 @@ public class ChatServiceImpl implements ChatService {
         }
 
         message.delete();
-        return chatMessageRepository.save(message);
+        return CompletableFuture.completedFuture(chatMessageRepository.save(message));
     }
 
     @Override
@@ -82,7 +89,8 @@ public class ChatServiceImpl implements ChatService {
                 .orElseThrow(() -> new RuntimeException("Session not found"));
     }
     
-    public Optional<ChatSession> findSessionById(UUID sessionId) {
-        return chatSessionRepository.findById(sessionId);
+    @Async
+    public CompletableFuture<Optional<ChatSession>> findSessionById(UUID sessionId) {
+        return CompletableFuture.completedFuture(chatSessionRepository.findById(sessionId));
     }
 }
