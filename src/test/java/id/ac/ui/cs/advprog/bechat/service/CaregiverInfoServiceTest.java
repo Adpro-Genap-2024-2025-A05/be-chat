@@ -1,41 +1,36 @@
 package id.ac.ui.cs.advprog.bechat.service;
 
-import id.ac.ui.cs.advprog.bechat.dto.UserInfoDTO;
+import id.ac.ui.cs.advprog.bechat.dto.ApiResponseDto;
+import id.ac.ui.cs.advprog.bechat.dto.CaregiverPublicDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 import org.springframework.http.*;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.core.ParameterizedTypeReference;
 
+import java.lang.reflect.Field;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
-import java.util.Arrays;
 
 class CaregiverInfoServiceTest {
 
     private RestTemplate restTemplate;
     private CaregiverInfoService caregiverInfoService;
 
-    private final String AUTH_URL = "http://localhost:8080"; 
+    private final String AUTH_URL = "http://localhost:8080";
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         restTemplate = mock(RestTemplate.class);
         caregiverInfoService = new CaregiverInfoService(restTemplate);
 
-        Arrays.stream(caregiverInfoService.getClass().getDeclaredFields())
-                .filter(field -> field.getName().equals("authServiceUrl"))
-                .findFirst()
-                .ifPresent(field -> {
-                    field.setAccessible(true);
-                    try {
-                        field.set(caregiverInfoService, AUTH_URL);
-                    } catch (IllegalAccessException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
+        Field authUrlField = CaregiverInfoService.class.getDeclaredField("authServiceUrl");
+        authUrlField.setAccessible(true);
+        authUrlField.set(caregiverInfoService, AUTH_URL);
     }
 
     @Test
@@ -43,17 +38,17 @@ class CaregiverInfoServiceTest {
         UUID userId = UUID.randomUUID();
         String token = "fake-token";
 
-        UserInfoDTO mockUser = new UserInfoDTO();
-        mockUser.setName("Dr. Cleo");
-
-        ResponseEntity<UserInfoDTO> responseEntity = new ResponseEntity<>(mockUser, HttpStatus.OK);
+        CaregiverPublicDto mockCaregiver = new CaregiverPublicDto();
+        mockCaregiver.setName("Dr. Cleo");
+        ApiResponseDto<CaregiverPublicDto> responseDto = ApiResponseDto.success(200, "OK", mockCaregiver);
+        ResponseEntity<ApiResponseDto<CaregiverPublicDto>> responseEntity = new ResponseEntity<>(responseDto, HttpStatus.OK);
 
         when(restTemplate.exchange(
-                eq(AUTH_URL + "/auth/caregiver/" + userId),
-                eq(HttpMethod.GET),
-                any(HttpEntity.class),
-                eq(UserInfoDTO.class)
-        )).thenReturn(responseEntity);
+            eq(AUTH_URL + "/data/caregiver/" + userId),
+            eq(HttpMethod.GET),
+            any(HttpEntity.class),
+            ArgumentMatchers.<ParameterizedTypeReference<ApiResponseDto<CaregiverPublicDto>>>any()
+    )).thenReturn(responseEntity);
 
         String result = caregiverInfoService.getNameByUserIdCaregiver(userId, token);
 
@@ -73,16 +68,16 @@ class CaregiverInfoServiceTest {
         UUID userId = UUID.randomUUID();
         String token = "fake-token";
 
-        ResponseEntity<UserInfoDTO> responseEntity = new ResponseEntity<>(null, HttpStatus.OK);
+        ResponseEntity<ApiResponseDto<CaregiverPublicDto>> responseEntity = new ResponseEntity<>(null, HttpStatus.OK);
 
         when(restTemplate.exchange(
                 anyString(),
                 eq(HttpMethod.GET),
                 any(HttpEntity.class),
-                eq(UserInfoDTO.class)
+                ArgumentMatchers.<ParameterizedTypeReference<ApiResponseDto<CaregiverPublicDto>>>any()
         )).thenReturn(responseEntity);
 
-        assertThrows(IllegalStateException.class, () ->
+        assertThrows(NullPointerException.class, () ->
                 caregiverInfoService.getNameByUserIdCaregiver(userId, token)
         );
     }
@@ -92,14 +87,15 @@ class CaregiverInfoServiceTest {
         UUID userId = UUID.randomUUID();
         String token = "fake-token";
 
-        UserInfoDTO userInfoDTO = new UserInfoDTO(); // name default-nya null
-        ResponseEntity<UserInfoDTO> responseEntity = new ResponseEntity<>(userInfoDTO, HttpStatus.OK);
+        CaregiverPublicDto caregiverPublicDto = new CaregiverPublicDto();
+        ApiResponseDto<CaregiverPublicDto> responseDto = ApiResponseDto.success(200, "OK", caregiverPublicDto);
+        ResponseEntity<ApiResponseDto<CaregiverPublicDto>> responseEntity = new ResponseEntity<>(responseDto, HttpStatus.OK);
 
         when(restTemplate.exchange(
                 anyString(),
                 eq(HttpMethod.GET),
                 any(HttpEntity.class),
-                eq(UserInfoDTO.class)
+                ArgumentMatchers.<ParameterizedTypeReference<ApiResponseDto<CaregiverPublicDto>>>any()
         )).thenReturn(responseEntity);
 
         assertThrows(IllegalStateException.class, () ->

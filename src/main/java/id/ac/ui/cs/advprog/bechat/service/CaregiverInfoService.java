@@ -1,13 +1,13 @@
 package id.ac.ui.cs.advprog.bechat.service;
 
-import id.ac.ui.cs.advprog.bechat.dto.UserInfoDTO;
+import id.ac.ui.cs.advprog.bechat.dto.ApiResponseDto;
+import id.ac.ui.cs.advprog.bechat.dto.CaregiverPublicDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-
-import java.util.Objects;
+import org.springframework.core.ParameterizedTypeReference;
 import java.util.UUID;
 
 @Service
@@ -23,23 +23,26 @@ public class CaregiverInfoService {
         if (userId == null) {
             throw new IllegalArgumentException("Caregiver userId is null");
         }
-    
+
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(token);
         HttpEntity<Void> entity = new HttpEntity<>(headers);
-        ResponseEntity<UserInfoDTO> response = restTemplate.exchange(
-                authServiceUrl + "/auth/caregiver/" + userId,
+
+        String url = authServiceUrl + "/data/caregiver/" + userId;
+
+        ResponseEntity<ApiResponseDto<CaregiverPublicDto>> response = restTemplate.exchange(
+                url,
                 HttpMethod.GET,
                 entity,
-                UserInfoDTO.class
+                new ParameterizedTypeReference<>() {}
         );
 
-        UserInfoDTO body = response.getBody();
-        if (body == null || body.getName() == null) {
+        CaregiverPublicDto caregiver = response.getBody().getData();
+
+        if (caregiver == null || caregiver.getName() == null) {
             throw new IllegalStateException("Failed to retrieve caregiver name from auth service");
         }
 
-        return Objects.requireNonNull(response.getBody()).getName();
-
+        return caregiver.getName();
     }
 }
