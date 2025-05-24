@@ -22,7 +22,7 @@ public class ChatServiceImpl implements ChatService {
     private final ChatSessionRepository chatSessionRepository;
 
     @Override
-    @Async
+    @Async("taskExecutor")
     public CompletableFuture<ChatMessage> sendMessage(SendMessageRequest dto, UUID senderId) {
         ChatSession session = chatSessionRepository.findById(dto.getSessionId())
                 .orElseThrow(() -> new RuntimeException("Session not found"));
@@ -43,7 +43,7 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
-    @Async
+    @Async("taskExecutor")
     public CompletableFuture<List<ChatMessage>> getMessages(UUID sessionId, UUID userId) {
         ChatSession session = getSessionById(sessionId);
 
@@ -56,7 +56,7 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
-    @Async
+    @Async("taskExecutor")
     public CompletableFuture<ChatMessage> editMessage(UUID messageId, String newContent, UUID userId) {
         ChatMessage message = chatMessageRepository.findById(messageId)
                 .orElseThrow(() -> new RuntimeException("Message not found"));
@@ -70,7 +70,7 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
-    @Async
+    @Async("taskExecutor")
     public CompletableFuture<ChatMessage> deleteMessage(UUID messageId, UUID userId) {
         ChatMessage message = chatMessageRepository.findById(messageId)
                 .orElseThrow(() -> new RuntimeException("Message not found"));
@@ -89,7 +89,7 @@ public class ChatServiceImpl implements ChatService {
                 .orElseThrow(() -> new RuntimeException("Session not found"));
     }
     
-    @Async
+    @Async("taskExecutor")
     public CompletableFuture<Optional<ChatSession>> findSessionById(UUID sessionId) {
         return CompletableFuture.completedFuture(chatSessionRepository.findById(sessionId));
     }
