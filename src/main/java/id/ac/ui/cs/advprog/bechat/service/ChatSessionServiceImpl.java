@@ -4,6 +4,7 @@ import id.ac.ui.cs.advprog.bechat.dto.TokenVerificationResponseDto;
 import id.ac.ui.cs.advprog.bechat.model.ChatSession;
 import id.ac.ui.cs.advprog.bechat.model.enums.Role;
 import id.ac.ui.cs.advprog.bechat.repository.ChatSessionRepository;
+import io.micrometer.core.instrument.Counter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,61 +18,60 @@ public class ChatSessionServiceImpl implements ChatSessionService {
 
     private final ChatSessionRepository chatSessionRepository;
     private final TokenVerificationService tokenVerificationService;
-    private final CaregiverInfoService CaregiverInfoService;
+    private final CaregiverInfoService caregiverInfoService;
+
+    private final Counter chatSessionCreatedCounter;
+    private final Counter chatSessionCreateFailureCounter;
 
     @Override
     public ChatSession createSession(UUID pacilian, UUID caregiver, String token) {
-        if (pacilian == null || caregiver == null) {
-            throw new IllegalArgumentException("Pacilian and Caregiver must not be null");
-        }
-
-        if (pacilian.equals(caregiver)) {
-            throw new IllegalArgumentException("Pacilian tidak boleh membuat sesi dengan dirinya sendiri");
-        }
-        Role requesterRole = tokenVerificationService.getRoleFromToken(token);
-
-        if (requesterRole != Role.PACILIAN) {
-            throw new IllegalArgumentException("Only PACILIAN can create session");
-        }
-
-        Role pacilianRole = tokenVerificationService.getRoleFromToken(token);
-        Role caregiverRole;
-
         try {
-            caregiverRole = Role.CAREGIVER; 
+            if (pacilian == null || caregiver == null) {
+                throw new IllegalArgumentException("Pacilian and Caregiver must not be null");
+            }
+
+            if (pacilian.equals(caregiver)) {
+                throw new IllegalArgumentException("Pacilian tidak boleh membuat sesi dengan dirinya sendiri");
+            }
+
+            Role requesterRole = tokenVerificationService.getRoleFromToken(token);
+            if (requesterRole != Role.PACILIAN) {
+                throw new IllegalArgumentException("Only PACILIAN can create session");
+            }
+
+            TokenVerificationResponseDto pacilianInfo = tokenVerificationService.verifyToken(token);
+            String pacilianName = pacilianInfo.getName();
+
+            String caregiverName = caregiverInfoService.getNameByUserIdCaregiver(caregiver, token);
+
+            ChatSession session = findSession(pacilian, caregiver)
+                    .orElseGet(() -> {
+                        ChatSession newSession = new ChatSession();
+                        newSession.setId(UUID.randomUUID());
+                        newSession.setPacilian(pacilian);
+                        newSession.setCaregiver(caregiver);
+                        newSession.setPacilianName(pacilianName);
+                        newSession.setCaregiverName(caregiverName);
+                        return chatSessionRepository.save(newSession);
+                    });
+
+            chatSessionCreatedCounter.increment();
+            return session;
         } catch (Exception e) {
-            throw new IllegalArgumentException("Unable to fetch caregiver role");
+            chatSessionCreateFailureCounter.increment();
+            throw e;
         }
-
-        if (pacilianRole != Role.PACILIAN || caregiverRole != Role.CAREGIVER) {
-            throw new IllegalArgumentException("Only PACILIAN can create session with CAREGIVER");
-        }
-        TokenVerificationResponseDto pacilianInfo = tokenVerificationService.verifyToken(token);
-        String pacilianName = pacilianInfo.getName();
-        
-        String caregiverName = CaregiverInfoService.getNameByUserIdCaregiver(caregiver, token);
-
-        return findSession(pacilian, caregiver)
-                .orElseGet(() -> {
-                    ChatSession session = new ChatSession();
-                    session.setId(UUID.randomUUID());
-                    session.setPacilian(pacilian);
-                    session.setCaregiver(caregiver);
-                    session.setPacilianName(pacilianName);
-                    session.setCaregiverName(caregiverName);
-                    return chatSessionRepository.save(session);
-                });
     }
 
     @Override
     public Optional<ChatSession> findSession(UUID pacilian, UUID caregiver) {
         return chatSessionRepository.findAll().stream()
-            .filter(s -> s.getPacilian() != null && s.getCaregiver() != null)
-            .filter(s ->
-                (s.getPacilian().equals(pacilian) && s.getCaregiver().equals(caregiver)) ||
-                (s.getPacilian().equals(caregiver) && s.getCaregiver().equals(pacilian))
-            )
-            .findFirst();
+                .filter(s -> s.getPacilian() != null && s.getCaregiver() != null)
+                .filter(s ->
+                        (s.getPacilian().equals(pacilian) && s.getCaregiver().equals(caregiver)) ||
+                        (s.getPacilian().equals(caregiver) && s.getCaregiver().equals(pacilian))
+                )
+                .findFirst();
     }
 
     @Override

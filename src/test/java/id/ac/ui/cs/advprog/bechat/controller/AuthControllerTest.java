@@ -48,7 +48,7 @@ class AuthControllerTest {
     void testVerifyToken_shouldReturn200WhenTokenValid() throws Exception {
         Mockito.when(tokenVerificationService.verifyToken("faketoken")).thenReturn(validResponse);
 
-        mockMvc.perform(post("/auth/verify")
+        mockMvc.perform(post("/api/auth/verify")
                         .header(HttpHeaders.AUTHORIZATION, VALID_TOKEN))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
@@ -58,7 +58,7 @@ class AuthControllerTest {
 
     @Test
     void testVerifyToken_shouldReturn401WhenNoToken() throws Exception {
-        mockMvc.perform(post("/auth/verify"))
+        mockMvc.perform(post("/api/auth/verify"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.status").value(401))
                 .andExpect(jsonPath("$.message").value("Invalid authentication token"));
@@ -72,7 +72,7 @@ class AuthControllerTest {
 
         Mockito.when(tokenVerificationService.verifyToken("faketoken")).thenReturn(invalidResponse);
 
-        mockMvc.perform(post("/auth/verify")
+        mockMvc.perform(post("/api/auth/verify")
                         .header(HttpHeaders.AUTHORIZATION, VALID_TOKEN))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.status").value(401))

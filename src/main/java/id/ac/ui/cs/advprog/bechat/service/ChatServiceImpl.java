@@ -5,13 +5,14 @@ import id.ac.ui.cs.advprog.bechat.model.ChatMessage;
 import id.ac.ui.cs.advprog.bechat.model.ChatSession;
 import id.ac.ui.cs.advprog.bechat.repository.ChatMessageRepository;
 import id.ac.ui.cs.advprog.bechat.repository.ChatSessionRepository;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Timer;
 import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import org.springframework.scheduling.annotation.Async;
 import java.util.concurrent.CompletableFuture;
 
 @Service
@@ -21,39 +22,58 @@ public class ChatServiceImpl implements ChatService {
     private final ChatMessageRepository chatMessageRepository;
     private final ChatSessionRepository chatSessionRepository;
 
+    private final Counter sendMessageCounter;
+    private final Counter sendMessageFailureCounter;
+    private final Counter editMessageCounter;
+    private final Counter deleteMessageCounter;
+    private final Timer getMessagesTimer;
+
     @Override
     @Async("taskExecutor")
     public CompletableFuture<ChatMessage> sendMessage(SendMessageRequest dto, UUID senderId) {
-        ChatSession session = chatSessionRepository.findById(dto.getSessionId())
-                .orElseThrow(() -> new RuntimeException("Session not found"));
+        try {
+            ChatSession session = chatSessionRepository.findById(dto.getSessionId())
+                    .orElseThrow(() -> new RuntimeException("Session not found"));
 
-        if (!session.getPacilian().equals(senderId) && !session.getCaregiver().equals(senderId)) {
-            throw new SecurityException("You are not part of this session.");
+            if (!session.getPacilian().equals(senderId) && !session.getCaregiver().equals(senderId)) {
+                throw new SecurityException("You are not part of this session.");
+            }
+
+            ChatMessage message = new ChatMessage();
+            message.setId(UUID.randomUUID());
+            message.setSession(session);
+            message.setSenderId(senderId);
+            message.setContent(dto.getContent());
+            message.setEdited(false);
+            message.setDeleted(false);
+
+            ChatMessage saved = chatMessageRepository.save(message);
+            sendMessageCounter.increment();
+            return CompletableFuture.completedFuture(saved);
+        } catch (Exception e) {
+            sendMessageFailureCounter.increment();
+            throw e;
         }
-
-        ChatMessage message = new ChatMessage();
-        message.setId(UUID.randomUUID());
-        message.setSession(session);
-        message.setSenderId(senderId);
-        message.setContent(dto.getContent());
-        message.setEdited(false);
-        message.setDeleted(false);
-
-        return CompletableFuture.completedFuture(chatMessageRepository.save(message));
     }
 
     @Override
     @Async("taskExecutor")
     public CompletableFuture<List<ChatMessage>> getMessages(UUID sessionId, UUID userId) {
-        ChatSession session = getSessionById(sessionId);
+        return CompletableFuture.supplyAsync(() -> getMessagesTimer.<List<ChatMessage>>record(() -> {
+            try {
+                ChatSession session = getSessionById(sessionId);
 
-        if (!session.getPacilian().equals(userId) && !session.getCaregiver().equals(userId)) {
-            throw new SecurityException("You do not have access to this session.");
-        }
+                if (!session.getPacilian().equals(userId) && !session.getCaregiver().equals(userId)) {
+                    throw new SecurityException("You do not have access to this session.");
+                }
 
-        return CompletableFuture.completedFuture(
-                chatMessageRepository.findBySessionIdOrderByCreatedAtAsc(sessionId));
+                return chatMessageRepository.findBySessionIdOrderByCreatedAtAsc(sessionId);
+            } catch (Exception e) {
+                throw new RuntimeException("Access denied or other failure in getMessages", e);
+            }
+        }));
     }
+
 
     @Override
     @Async("taskExecutor")
@@ -66,7 +86,9 @@ public class ChatServiceImpl implements ChatService {
         }
 
         message.edit(newContent);
-        return CompletableFuture.completedFuture(chatMessageRepository.save(message));
+        ChatMessage saved = chatMessageRepository.save(message);
+        editMessageCounter.increment();
+        return CompletableFuture.completedFuture(saved);
     }
 
     @Override
@@ -80,7 +102,9 @@ public class ChatServiceImpl implements ChatService {
         }
 
         message.delete();
-        return CompletableFuture.completedFuture(chatMessageRepository.save(message));
+        ChatMessage saved = chatMessageRepository.save(message);
+        deleteMessageCounter.increment();
+        return CompletableFuture.completedFuture(saved);
     }
 
     @Override
@@ -88,7 +112,7 @@ public class ChatServiceImpl implements ChatService {
         return chatSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new RuntimeException("Session not found"));
     }
-    
+
     @Async("taskExecutor")
     public CompletableFuture<Optional<ChatSession>> findSessionById(UUID sessionId) {
         return CompletableFuture.completedFuture(chatSessionRepository.findById(sessionId));
