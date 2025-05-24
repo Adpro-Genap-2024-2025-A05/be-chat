@@ -31,7 +31,7 @@ public class SecurityConfig {
             .logout(logout -> logout.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/auth/verify").permitAll()
+                .requestMatchers("/api/auth/verify").permitAll()
                 .requestMatchers("/api/chat/session/create").hasAuthority("PACILIAN")
                 .requestMatchers("/api/chat/**").permitAll()
                 .anyRequest().denyAll()
