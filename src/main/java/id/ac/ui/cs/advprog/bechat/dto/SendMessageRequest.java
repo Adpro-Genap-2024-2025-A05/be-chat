@@ -14,9 +14,6 @@ public class SendMessageRequest {
     @NotNull(message = "Session ID tidak boleh null")
     private UUID sessionId;
 
-    @NotNull(message = "Sender ID tidak boleh null")
-    private UUID senderId;
-
     @NotBlank(message = "Konten pesan tidak boleh kosong")
     private String content;
 

@@ -1,7 +1,23 @@
 package id.ac.ui.cs.advprog.bechat.model.enums;
 
+import lombok.Getter;
+
+@Getter
 public enum Role {
-    GUEST,
-    PACILLIANS,
-    CAREGIVER
+    PACILIAN("PACILIAN"),
+    CAREGIVER("CAREGIVER");
+    private final String value;
+    
+    private Role(String value) {
+        this.value = value;
+    }
+    
+    public static boolean contains(String param) {
+        for (Role role : Role.values()) {
+            if (role.name().equals(param)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

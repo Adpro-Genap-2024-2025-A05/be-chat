@@ -1,73 +1,73 @@
-package id.ac.ui.cs.advprog.bechat.controller;
+package id.ac.ui.cs.advprog.bechat.functional;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import id.ac.ui.cs.advprog.bechat.dto.SendMessageRequest;
-import id.ac.ui.cs.advprog.bechat.model.builder.ChatMessage;
-import id.ac.ui.cs.advprog.bechat.model.builder.ChatSession;
+import id.ac.ui.cs.advprog.bechat.model.ChatSession;
 import id.ac.ui.cs.advprog.bechat.repository.ChatMessageRepository;
 import id.ac.ui.cs.advprog.bechat.repository.ChatSessionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class ChatControllerFunctionalTest {
+public class CreateMessageFunctionalTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @Autowired
-    private ChatMessageRepository chatMessageRepository;
+    private ObjectMapper objectMapper;
 
     @Autowired
     private ChatSessionRepository chatSessionRepository;
 
     @Autowired
-    private ObjectMapper objectMapper;
+    private ChatMessageRepository chatMessageRepository;
 
     private ChatSession session;
-    private UUID senderId;
+    private static final String FAKE_TOKEN = "Bearer faketoken";
 
     @BeforeEach
     void setUp() {
         chatMessageRepository.deleteAll();
         chatSessionRepository.deleteAll();
 
-        senderId = UUID.randomUUID();
         session = new ChatSession();
         session.setId(UUID.randomUUID());
-        session.setUser1Id(senderId);
-        session.setUser2Id(UUID.randomUUID());
+        session.setPacilian(UUID.fromString("11111111-1111-1111-1111-111111111111"));
+        session.setCaregiver(UUID.fromString("22222222-2222-2222-2222-222222222222"));
         session.setCreatedAt(LocalDateTime.now());
-        session = chatSessionRepository.save(session);
+        chatSessionRepository.save(session);
     }
 
     @Test
-    void testSendMessage_shouldSaveAndReturnMessage() throws Exception {
+    void whenSendMessage_shouldSaveMessageToRepositoryAndReturnIt() throws Exception {
         SendMessageRequest request = new SendMessageRequest();
         request.setSessionId(session.getId());
-        request.setSenderId(senderId);
-        request.setContent("Halo functional test");
+        request.setContent("di aeon"); 
 
-        mockMvc.perform(post("/chat/send")
+        mockMvc.perform(post("/api/chat/send")
+                        .header("Authorization", FAKE_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
+                .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content").value("Halo functional test"))
-                .andExpect(jsonPath("$.senderId").value(senderId.toString()));
-
-        assertThat(chatMessageRepository.findAll()).hasSize(1);
+                .andExpect(jsonPath("$.data.id").exists())
+                .andExpect(jsonPath("$.data.senderId").value(session.getPacilian().toString()))
+                .andExpect(jsonPath("$.data.content").value("di aeon"))
+                .andExpect(jsonPath("$.data.edited").value(false))
+                .andExpect(jsonPath("$.data.deleted").value(false));
     }
 }

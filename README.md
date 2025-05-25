@@ -2,10 +2,16 @@
 
 - BeChat adalah microservice untuk menangani fitur percakapan (chat) antara dua pengguna, seperti pasien (Pacillians) dan dokter (CareGiver)
 ---
+#### Fitur Chat antara Pacillians and CareGiver
+*Developed by: Cleo Excellen Iskandar*
+- Component Diagram
+  ![Rating Component Diagram](src/main/resources/assets/component_diagram.jpg)
+- Code Diagram
+  ![Rating Code Diagram](src/main/resources/assets/code_diagram.png)
 
 ## Deployment
 
-Link: [BE-Chat Deployment](https://protective-shalna-be-chat-bccf0946.koyeb.app/)
+Link: [BE-Chat Deployment](http://54.158.239.145/)
 Link: [Postman API](https://www.postman.com/api-ristek/workspace/adprochat/collection/38268031-7f8b0afc-a091-4e9d-9439-8d1736072df7?action=share&creator=38268031)
 
 ## 🚀 Fitur Utama
@@ -47,34 +53,8 @@ Aplikasi ini menggunakan pendekatan **Layered Architecture** yang memisahkan tan
 
 ## 💡 Design Pattern yang Digunakan
 
-### 🧠 Strategy Pattern
+### 🧠 State Pattern
 
-**Alasan Penggunaan:**  
-Strategy Pattern digunakan untuk menghindari logic `if-else` panjang dalam pengolahan pesan (misalnya: edit atau hapus). Dengan pola ini, setiap aksi terhadap pesan diwakili oleh strategi berbeda.
-
-**Implementasi:**
-- Interface: `MessageActionStrategy`
-- Strategi:
-  - `EditMessageStrategy` – mengubah konten & set `edited = true`
-  - `DeleteMessageStrategy` – ubah konten ke “Pesan telah dihapus” & set `deleted = true`
-
-**Manfaat:**
-1. Memisahkan logika bisnis setiap aksi
-- Setiap aksi (seperti mengirim, mengedit, atau menghapus pesan) diimplementasikan secara terpisah agar tidak tercampur dalam ChatServiceImpl, sehingga kode menjadi lebih terorganisir dan mudah dipelihara.
-
-2. Meningkatkan fleksibilitas dan skalabilitas kode
-- Pola ini memudahkan penambahan aksi atau fitur baru tanpa perlu mengubah kode yang sudah ada, sehingga meminimalkan risiko bug dan konflik.
-
-3. Menerapkan prinsip SOLID, khususnya:
-
-- Single Responsibility Principle (SRP):
-Setiap strategi bertanggung jawab hanya untuk satu jenis aksi, sehingga kode menjadi lebih modular dan mudah dipahami.
-
-- Open/Closed Principle (OCP):
-Struktur kode terbuka untuk perluasan (penambahan fitur baru), namun tertutup untuk modifikasi terhadap bagian yang sudah berjalan dengan baik.
-- contoh: 
-Mudah menambahkan strategi baru, seperti PinMessageStrategy untuk fitur "Pin Message", tanpa harus mengubah kode utama di ChatServiceImpl.
----
 
 ## 📦 API Endpoint
 
@@ -83,7 +63,7 @@ Mudah menambahkan strategi baru, seperti PinMessageStrategy untuk fitur "Pin Mes
 |--------|-----------------------------------------------------------------------|-----------------------------------------------------|
 | POST   | `/chat/session/create`                                                | Membuat sesi chat antara dua user                   |
 | POST   | `/chat/send`                                                          | Mengirim atau membuat pesan baru                    |
-| GET    | `/chat/session/find?user1={userId1}&user2={userId2}`                 | Mencari sesi antara dua pengguna                    |
+| GET    | `/chat/session/find?user1={userId1}&user2={userId2}`                  | Mencari sesi antara dua pengguna                    |
 | GET    | `/chat/session/user/{userId}`                                         | Mencari semua sesi chat yang dimiliki seorang user  |
 | GET    | `/chat/session/{sessionId}`                                           | Mendapatkan semua pesan dalam satu sesi chat        |
 | PUT    | `/chat/message/{messageId}`                                           | Mengedit isi pesan berdasarkan `messageId`          |
