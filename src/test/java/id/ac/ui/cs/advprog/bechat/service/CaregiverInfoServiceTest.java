@@ -77,10 +77,11 @@ class CaregiverInfoServiceTest {
                 ArgumentMatchers.<ParameterizedTypeReference<ApiResponseDto<CaregiverPublicDto>>>any()
         )).thenReturn(responseEntity);
 
-        assertThrows(NullPointerException.class, () ->
+        assertThrows(IllegalStateException.class, () ->
                 caregiverInfoService.getNameByUserIdCaregiver(userId, token)
         );
     }
+
 
     @Test
     void testGetNameByUserIdCaregiver_bodyWithNullName_shouldThrow() {
