@@ -1,5 +1,6 @@
 package id.ac.ui.cs.advprog.bechat.config;
 
+import io.micrometer.core.aop.TimedAspect;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -8,6 +9,10 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class ChatMetricsConfig {
+    @Bean
+    public TimedAspect timedAspect(MeterRegistry registry) {
+        return new TimedAspect(registry);
+    }
 
     @Bean
     public Counter sendMessageCounter(MeterRegistry meterRegistry) {
@@ -41,6 +46,8 @@ public class ChatMetricsConfig {
     public Timer getMessagesTimer(MeterRegistry meterRegistry) {
         return Timer.builder("chat.message.fetch.timer")
                 .description("Time taken to fetch messages")
+                .publishPercentileHistogram() 
+                .publishPercentiles(0.95)     
                 .register(meterRegistry);
     }
 
