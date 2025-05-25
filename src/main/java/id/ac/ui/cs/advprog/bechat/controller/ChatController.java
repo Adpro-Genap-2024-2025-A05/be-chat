@@ -5,6 +5,7 @@ import id.ac.ui.cs.advprog.bechat.model.ChatMessage;
 import id.ac.ui.cs.advprog.bechat.model.ChatSession;
 import id.ac.ui.cs.advprog.bechat.service.ChatService;
 import id.ac.ui.cs.advprog.bechat.service.TokenVerificationService;
+import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ public class ChatController {
 
     private final ChatService chatService;
     private final TokenVerificationService tokenVerificationService;
+    private final MeterRegistry meterRegistry;
 
     @PostMapping("/send")
     public CompletableFuture<ResponseEntity<BaseResponseDTO<ChatMessage>>> sendMessage(
@@ -37,7 +39,6 @@ public class ChatController {
                         ResponseEntity.status(HttpStatus.CREATED)
                                 .body(BaseResponseDTO.success(HttpStatus.CREATED.value(), "Message sent successfully", saved)));
     }
-
     @GetMapping("/session/{id}")
     public CompletableFuture<ResponseEntity<BaseResponseDTO<ChatSessionWithMessagesDto>>> getMessages(
             @PathVariable UUID id,

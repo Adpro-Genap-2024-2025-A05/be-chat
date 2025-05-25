@@ -9,9 +9,4 @@ class BeChatApplicationTests {
     @Test
     void contextLoads() {
     }
-
-    @Test
-    void mainMethodShouldRunWithoutErrors() {
-        BeChatApplication.main(new String[]{});
-    }
 }

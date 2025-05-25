@@ -11,22 +11,21 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
+import static org.springframework.security.config.Customizer.withDefaults;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
-
 @Configuration
-@EnableAsync
 @EnableWebSecurity
+@EnableAsync
 public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
         http
-            .cors() 
-            .and()
+            .cors(withDefaults()) 
             .csrf(csrf -> csrf.disable())
-            .formLogin(login -> login.disable())
+            .formLogin(form -> form.disable())
             .httpBasic(basic -> basic.disable())
             .logout(logout -> logout.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -34,6 +33,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/verify").permitAll()
                 .requestMatchers("/api/chat/session/create").hasAuthority("PACILIAN")
                 .requestMatchers("/api/chat/**").permitAll()
+                .requestMatchers("/actuator/**").permitAll()
                 .anyRequest().denyAll()
             )
             .exceptionHandling(ex -> ex
@@ -53,14 +53,17 @@ public class SecurityConfig {
 
         config.setAllowedOrigins(List.of(
             "http://localhost:3000",
-            "http://98.85.36.184"  
+            "http://98.85.36.184",
+            "http://localhost:3001"
         ));
+
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         config.setAllowCredentials(true); 
+        config.setMaxAge(3600L);
+        config.setExposedHeaders(List.of("X-Total-Count", "X-Custom-Header"));
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
-
         return source;
     }
 }

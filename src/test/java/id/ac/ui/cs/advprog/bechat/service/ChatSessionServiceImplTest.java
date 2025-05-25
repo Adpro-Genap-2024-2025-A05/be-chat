@@ -4,6 +4,7 @@ import id.ac.ui.cs.advprog.bechat.dto.TokenVerificationResponseDto;
 import id.ac.ui.cs.advprog.bechat.model.ChatSession;
 import id.ac.ui.cs.advprog.bechat.model.enums.Role;
 import id.ac.ui.cs.advprog.bechat.repository.ChatSessionRepository;
+import io.micrometer.core.instrument.Counter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -13,7 +14,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 public class ChatSessionServiceImplTest {
@@ -21,6 +21,9 @@ public class ChatSessionServiceImplTest {
     private ChatSessionRepository chatSessionRepository;
     private TokenVerificationService tokenVerificationService;
     private CaregiverInfoService caregiverInfoService;
+    private Counter chatSessionCreatedCounter;
+    private Counter chatSessionCreateFailureCounter;
+
     private ChatSessionServiceImpl chatSessionService;
 
     @BeforeEach
@@ -28,8 +31,16 @@ public class ChatSessionServiceImplTest {
         chatSessionRepository = mock(ChatSessionRepository.class);
         tokenVerificationService = mock(TokenVerificationService.class);
         caregiverInfoService = mock(CaregiverInfoService.class);
+        chatSessionCreatedCounter = mock(Counter.class);
+        chatSessionCreateFailureCounter = mock(Counter.class);
 
-        chatSessionService = new ChatSessionServiceImpl(chatSessionRepository, tokenVerificationService, caregiverInfoService);
+        chatSessionService = new ChatSessionServiceImpl(
+            chatSessionRepository,
+            tokenVerificationService,
+            caregiverInfoService,
+            chatSessionCreatedCounter,
+            chatSessionCreateFailureCounter
+        );
     }
 
     @Test
@@ -48,9 +59,9 @@ public class ChatSessionServiceImplTest {
                 .valid(true)
                 .build();
         when(tokenVerificationService.verifyToken(token)).thenReturn(pacilianInfo);
-
         when(caregiverInfoService.getNameByUserIdCaregiver(caregiverId, token)).thenReturn("Dr. Panda");
 
+        when(chatSessionRepository.findAll()).thenReturn(Collections.emptyList());
         when(chatSessionRepository.save(any(ChatSession.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -61,6 +72,9 @@ public class ChatSessionServiceImplTest {
         assertEquals("Cleo", session.getPacilianName());
         assertEquals("Dr. Panda", session.getCaregiverName());
         assertNotNull(session.getId());
+
+        verify(chatSessionCreatedCounter).increment();
+        verify(chatSessionCreateFailureCounter, never()).increment();
     }
 
     @Test
