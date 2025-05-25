@@ -5,7 +5,6 @@ import id.ac.ui.cs.advprog.bechat.model.ChatMessage;
 import id.ac.ui.cs.advprog.bechat.model.ChatSession;
 import id.ac.ui.cs.advprog.bechat.service.ChatService;
 import id.ac.ui.cs.advprog.bechat.service.TokenVerificationService;
-import io.micrometer.core.annotation.Timed;
 import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -14,7 +13,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
-import io.micrometer.core.instrument.Timer;
 
 import java.util.List;
 import java.util.UUID;
@@ -41,35 +39,24 @@ public class ChatController {
                         ResponseEntity.status(HttpStatus.CREATED)
                                 .body(BaseResponseDTO.success(HttpStatus.CREATED.value(), "Message sent successfully", saved)));
     }
-    @Timed(value = "chat.message.fetch.timer", percentiles = {0.95})
     @GetMapping("/session/{id}")
     public CompletableFuture<ResponseEntity<BaseResponseDTO<ChatSessionWithMessagesDto>>> getMessages(
             @PathVariable UUID id,
             HttpServletRequest request
     ) {
         UUID userId = getUserIdFromRequest(request);
-
-        Timer.Sample sample = Timer.start(meterRegistry);
-
         return chatService.getMessages(id, userId).thenCompose(messages -> {
-            CompletableFuture<ResponseEntity<BaseResponseDTO<ChatSessionWithMessagesDto>>> responseFuture;
-
             if (messages.isEmpty()) {
-                responseFuture = chatService.findSessionById(id).thenApply(optionalSession -> {
+                return chatService.findSessionById(id).thenApply(optionalSession -> {
                     ChatSession session = optionalSession.orElseThrow(() ->
                             new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found"));
+
                     return buildSessionWithMessagesResponse(session, List.of());
                 });
             } else {
                 ChatSession session = messages.get(0).getSession();
-                responseFuture = CompletableFuture.completedFuture(buildSessionWithMessagesResponse(session, messages));
+                return CompletableFuture.completedFuture(buildSessionWithMessagesResponse(session, messages));
             }
-
-            return responseFuture.whenComplete((response, throwable) -> {
-                sample.stop(Timer.builder("chat_message_fetch_timer_seconds")
-                        .description("Time taken to fetch chat messages")
-                        .register(meterRegistry));
-            });
         });
     }
 

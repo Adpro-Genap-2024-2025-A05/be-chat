@@ -9,6 +9,7 @@ import id.ac.ui.cs.advprog.bechat.model.ChatSession;
 import id.ac.ui.cs.advprog.bechat.model.enums.Role;
 import id.ac.ui.cs.advprog.bechat.service.ChatService;
 import id.ac.ui.cs.advprog.bechat.service.TokenVerificationService;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -30,6 +31,7 @@ import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 
 @WebMvcTest(ChatController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -43,6 +45,9 @@ public class ChatControllerTest {
 
     @MockBean
     private TokenVerificationService tokenVerificationService;
+
+    @MockBean
+    private MeterRegistry meterRegistry;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -62,6 +67,7 @@ public class ChatControllerTest {
         dummyMessage.setCreatedAt(new Date());
         dummyMessage.setEdited(false);
         dummyMessage.setDeleted(false);
+        
 
         Mockito.when(tokenVerificationService.verifyToken(DUMMY_TOKEN))
                 .thenReturn(TokenVerificationResponseDto.builder()
@@ -136,7 +142,7 @@ public class ChatControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.content", is("Pesan telah dihapus")));
     }
-
+    
     @Test
     void testGetMessages() throws Exception {
         UUID sessionId = UUID.randomUUID();
@@ -165,4 +171,5 @@ public class ChatControllerTest {
                 .andExpect(jsonPath("$.data.pacilianName", is("Cleo")))
                 .andExpect(jsonPath("$.data.caregiverName", is("Dr. Panda")));
     }
+
 }

@@ -10,6 +10,7 @@ import io.micrometer.core.instrument.Timer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletionException;
@@ -43,20 +44,20 @@ class ChatServiceImplTest {
         deleteMessageCounter = mock(Counter.class);
         getMessagesTimer = mock(Timer.class);
 
-        when(getMessagesTimer.record(any(Supplier.class)))
+        when(getMessagesTimer.<List<ChatMessage>>record(any(Supplier.class)))
             .thenAnswer(invocation -> {
-                Supplier<?> supplier = invocation.getArgument(0);
+                Supplier<List<ChatMessage>> supplier = (Supplier<List<ChatMessage>>) invocation.getArgument(0);
                 return supplier.get();
             });
 
         chatService = new ChatServiceImpl(
-                chatMessageRepository,
-                chatSessionRepository,
-                sendMessageCounter,
-                sendMessageFailureCounter,
-                editMessageCounter,
-                deleteMessageCounter,
-                getMessagesTimer
+            chatMessageRepository,
+            chatSessionRepository,
+            sendMessageCounter,
+            sendMessageFailureCounter,
+            editMessageCounter,
+            deleteMessageCounter,
+            getMessagesTimer
         );
     }
 
@@ -216,4 +217,28 @@ class ChatServiceImplTest {
 
         assertThrows(RuntimeException.class, () -> chatService.getSessionById(sessionId));
     }
+    @SuppressWarnings("unchecked")
+    @Test
+    void testGetMessages_success() throws Exception {
+        UUID sessionId = UUID.randomUUID();
+        UUID userId = UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
+
+        ChatSession session = new ChatSession();
+        session.setId(sessionId);
+        session.setPacilian(userId); // userId valid sebagai pacilian
+        session.setCaregiver(UUID.randomUUID());
+
+        List<ChatMessage> mockMessages = List.of(
+                new ChatMessage(), new ChatMessage()
+        );
+
+        when(chatSessionRepository.findById(sessionId)).thenReturn(Optional.of(session));
+        when(chatMessageRepository.findBySessionIdOrderByCreatedAtAsc(sessionId)).thenReturn(mockMessages);
+
+        List<ChatMessage> result = chatService.getMessages(sessionId, userId).get();
+
+        assertEquals(2, result.size());
+        verify(getMessagesTimer).record(any(Supplier.class)); // Verifikasi timer
+    }
+
 }
