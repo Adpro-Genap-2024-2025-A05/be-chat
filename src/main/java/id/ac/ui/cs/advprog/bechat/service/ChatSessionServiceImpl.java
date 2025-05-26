@@ -43,7 +43,6 @@ public class ChatSessionServiceImpl implements ChatSessionService {
             }
 
             Role requesterRole = tokenVerificationService.getRoleFromToken(token);
-            logger.debug("Requester role extracted from token: {}", requesterRole);
 
             if (requesterRole != Role.PACILIAN) {
                 logger.warn("Unauthorized session creation attempt by non-PACILIAN role: {}", requesterRole);
@@ -52,10 +51,8 @@ public class ChatSessionServiceImpl implements ChatSessionService {
 
             TokenVerificationResponseDto pacilianInfo = tokenVerificationService.verifyToken(token);
             String pacilianName = pacilianInfo.getName();
-            logger.debug("Pacilian name resolved: {}", pacilianName);
 
             String caregiverName = caregiverInfoService.getNameByUserIdCaregiver(caregiver, token);
-            logger.debug("Caregiver name resolved: {}", caregiverName);
 
             ChatSession session = findSession(pacilian, caregiver)
                     .orElseGet(() -> {
@@ -82,7 +79,6 @@ public class ChatSessionServiceImpl implements ChatSessionService {
 
     @Override
     public Optional<ChatSession> findSession(UUID pacilian, UUID caregiver) {
-        logger.debug("Searching for existing session between pacilian: {} and caregiver: {}", pacilian, caregiver);
         return chatSessionRepository.findAll().stream()
                 .filter(s -> s.getPacilian() != null && s.getCaregiver() != null)
                 .filter(s ->
@@ -96,7 +92,6 @@ public class ChatSessionServiceImpl implements ChatSessionService {
     public List<ChatSession> getSessionsByUser(UUID userId) {
         logger.info("Fetching all sessions for user ID: {}", userId);
         List<ChatSession> sessions = chatSessionRepository.findByPacilianOrCaregiver(userId, userId);
-        logger.debug("Found {} sessions for user {}", sessions.size(), userId);
         return sessions;
     }
 }
