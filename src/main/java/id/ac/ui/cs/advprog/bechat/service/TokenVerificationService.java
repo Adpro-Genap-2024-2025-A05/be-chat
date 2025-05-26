@@ -27,9 +27,6 @@ public class TokenVerificationService {
     private String secretKey;
 
     public TokenVerificationResponseDto verifyToken(String token) {
-        logger.info("Verifying token");
-        logger.info(token);
-
         try {
             if (isTokenExpired(token)) {
                 logger.warn("Token is expired");
