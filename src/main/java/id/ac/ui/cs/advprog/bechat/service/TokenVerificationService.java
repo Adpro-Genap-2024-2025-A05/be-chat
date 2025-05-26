@@ -28,6 +28,7 @@ public class TokenVerificationService {
 
     public TokenVerificationResponseDto verifyToken(String token) {
         logger.info("Verifying token");
+        logger.info(token);
 
         try {
             if (isTokenExpired(token)) {
@@ -76,13 +77,11 @@ public class TokenVerificationService {
 
     public UUID getUserIdFromToken(String token) {
         UUID userId = UUID.fromString(verifyToken(token).getUserId());
-        logger.debug("Extracted userId {} from token", userId);
         return userId;
     }
 
     public Role getRoleFromToken(String token) {
         Role role = verifyToken(token).getRole();
-        logger.debug("Extracted role {} from token", role);
         return role;
     }
 
@@ -105,7 +104,6 @@ public class TokenVerificationService {
     }
 
     private Claims extractAllClaims(String token) throws ExpiredJwtException {
-        logger.debug("Extracting claims from token");
         return Jwts.parserBuilder()
                 .setSigningKey(getSignInKey())
                 .build()
@@ -114,7 +112,6 @@ public class TokenVerificationService {
     }
 
     private Key getSignInKey() {
-        logger.debug("Decoding JWT secret key");
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
     }
@@ -136,7 +133,6 @@ public class TokenVerificationService {
         try {
             Date expiration = extractExpiration(token);
             long remainingTime = expiration.getTime() - System.currentTimeMillis();
-            logger.debug("Token expires in {} ms", remainingTime);
             return Math.max(0, remainingTime);
         } catch (ExpiredJwtException e) {
             logger.warn("Token already expired while calculating remaining time");

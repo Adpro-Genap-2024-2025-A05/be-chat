@@ -33,6 +33,12 @@ public class CaregiverInfoService {
             throw new IllegalArgumentException("Caregiver userId is null");
         }
 
+        logger.info("Token length: {}", token.length());
+        logger.info("Token starts with: {}", token.substring(0, Math.min(20, token.length())));
+        logger.info("Token period count: {}", token.chars().filter(ch -> ch == '.').count());
+        
+        logger.debug("Full token: {}", token);
+
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(token);
