@@ -53,7 +53,7 @@ public class SecurityConfig {
 
         config.setAllowedOrigins(List.of(
             "http://localhost:3000",
-            // "http://98.85.36.184",
+            "http://98.85.36.184",
             "http://localhost:3001"
         ));
 

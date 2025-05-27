@@ -26,6 +26,8 @@ public class ChatSessionServiceImplTest {
 
     private ChatSessionServiceImpl chatSessionService;
 
+    private static final String TOKEN = "faketoken";
+
     @BeforeEach
     void setUp() {
         chatSessionRepository = mock(ChatSessionRepository.class);
@@ -47,25 +49,23 @@ public class ChatSessionServiceImplTest {
     void testCreateSession_shouldReturnSavedSession() {
         UUID pacilianId = UUID.randomUUID();
         UUID caregiverId = UUID.randomUUID();
-        String token = "faketoken";
 
-        when(tokenVerificationService.getRoleFromToken(token)).thenReturn(Role.PACILIAN);
-
-        TokenVerificationResponseDto pacilianInfo = TokenVerificationResponseDto.builder()
+        when(tokenVerificationService.getRoleFromToken(TOKEN)).thenReturn(Role.PACILIAN);
+        when(tokenVerificationService.verifyToken(TOKEN)).thenReturn(
+            TokenVerificationResponseDto.builder()
                 .userId(pacilianId.toString())
                 .name("Cleo")
                 .role(Role.PACILIAN)
                 .email("cleo@mail.com")
                 .valid(true)
-                .build();
-        when(tokenVerificationService.verifyToken(token)).thenReturn(pacilianInfo);
-        when(caregiverInfoService.getNameByUserIdCaregiver(caregiverId, token)).thenReturn("Dr. Panda");
-
+                .build()
+        );
+        when(caregiverInfoService.getNameByUserIdCaregiver(caregiverId, TOKEN)).thenReturn("Dr. Panda");
         when(chatSessionRepository.findAll()).thenReturn(Collections.emptyList());
         when(chatSessionRepository.save(any(ChatSession.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+            .thenAnswer(invocation -> invocation.getArgument(0));
 
-        ChatSession session = chatSessionService.createSession(pacilianId, caregiverId, token);
+        ChatSession session = chatSessionService.createSession(pacilianId, caregiverId, TOKEN);
 
         assertEquals(pacilianId, session.getPacilian());
         assertEquals(caregiverId, session.getCaregiver());
@@ -78,6 +78,67 @@ public class ChatSessionServiceImplTest {
     }
 
     @Test
+    void testCreateSession_shouldThrowExceptionIfPacilianOrCaregiverIsNull() {
+        UUID caregiverId = UUID.randomUUID();
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+            () -> chatSessionService.createSession(null, caregiverId, TOKEN));
+
+        assertEquals("Pacilian and Caregiver must not be null", exception.getMessage());
+        verify(chatSessionCreateFailureCounter).increment();
+    }
+
+    @Test
+    void testCreateSession_shouldThrowExceptionIfPacilianEqualsCaregiver() {
+        UUID sameId = UUID.randomUUID();
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+            () -> chatSessionService.createSession(sameId, sameId, TOKEN));
+
+        assertEquals("Pacilian tidak boleh membuat sesi dengan dirinya sendiri", exception.getMessage());
+        verify(chatSessionCreateFailureCounter).increment();
+    }
+
+    @Test
+    void testCreateSession_shouldThrowExceptionIfRoleIsNotPacilian() {
+        UUID pacilianId = UUID.randomUUID();
+        UUID caregiverId = UUID.randomUUID();
+
+        when(tokenVerificationService.getRoleFromToken(TOKEN)).thenReturn(Role.CAREGIVER);
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+            () -> chatSessionService.createSession(pacilianId, caregiverId, TOKEN));
+
+        assertEquals("Only PACILIAN can create session", exception.getMessage());
+        verify(chatSessionCreateFailureCounter).increment();
+    }
+
+    @Test
+    void testCreateSession_shouldReturnExistingSessionIfAlreadyExists() {
+        UUID pacilianId = UUID.randomUUID();
+        UUID caregiverId = UUID.randomUUID();
+
+        ChatSession existingSession = new ChatSession();
+        existingSession.setId(UUID.randomUUID());
+        existingSession.setPacilian(pacilianId);
+        existingSession.setCaregiver(caregiverId);
+        existingSession.setPacilianName("Cleo");
+        existingSession.setCaregiverName("Dr. Panda");
+
+        when(tokenVerificationService.getRoleFromToken(TOKEN)).thenReturn(Role.PACILIAN);
+        when(tokenVerificationService.verifyToken(TOKEN)).thenReturn(
+            TokenVerificationResponseDto.builder().name("Cleo").build()
+        );
+        when(caregiverInfoService.getNameByUserIdCaregiver(caregiverId, TOKEN)).thenReturn("Dr. Panda");
+        when(chatSessionRepository.findAll()).thenReturn(List.of(existingSession));
+
+        ChatSession session = chatSessionService.createSession(pacilianId, caregiverId, TOKEN);
+
+        assertEquals(existingSession, session);
+        verify(chatSessionCreatedCounter).increment();
+    }
+
+    @Test
     void testFindSession_shouldReturnIfFound() {
         UUID user1 = UUID.randomUUID();
         UUID user2 = UUID.randomUUID();
@@ -85,6 +146,23 @@ public class ChatSessionServiceImplTest {
         ChatSession session = new ChatSession();
         session.setPacilian(user1);
         session.setCaregiver(user2);
+
+        when(chatSessionRepository.findAll()).thenReturn(List.of(session));
+
+        Optional<ChatSession> result = chatSessionService.findSession(user1, user2);
+
+        assertTrue(result.isPresent());
+        assertEquals(session, result.get());
+    }
+
+    @Test
+    void testFindSession_shouldReturnIfUsersAreSwapped() {
+        UUID user1 = UUID.randomUUID();
+        UUID user2 = UUID.randomUUID();
+
+        ChatSession session = new ChatSession();
+        session.setPacilian(user2);
+        session.setCaregiver(user1);
 
         when(chatSessionRepository.findAll()).thenReturn(List.of(session));
 
@@ -116,22 +194,5 @@ public class ChatSessionServiceImplTest {
 
         assertEquals(1, result.size());
         assertEquals(session, result.get(0));
-    }
-
-    @Test
-    void testFindSession_shouldReturnIfUsersAreSwapped() {
-        UUID user1 = UUID.randomUUID();
-        UUID user2 = UUID.randomUUID();
-
-        ChatSession session = new ChatSession();
-        session.setPacilian(user2);
-        session.setCaregiver(user1);
-
-        when(chatSessionRepository.findAll()).thenReturn(List.of(session));
-
-        Optional<ChatSession> result = chatSessionService.findSession(user1, user2);
-
-        assertTrue(result.isPresent());
-        assertEquals(session, result.get());
     }
 }
