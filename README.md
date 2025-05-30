@@ -25,46 +25,6 @@ Melakukan chat antara pengguna dan dokter,  terdiri dari use cases sebagai berik
 
 ---
 
-## 📁 Arsitektur Proyek (Layered Architecture Pattern)
-
-Aplikasi ini menggunakan pendekatan **Layered Architecture** yang memisahkan tanggung jawab menjadi beberapa lapisan:
-
-1. **Controller Layer**
-   - Mengatur route dan menerima HTTP request
-   - `ChatController`, `ChatSessionController`
-
-2. **Service Layer**
-   - Menangani business logic
-   - `ChatService`, `ChatServiceImpl`, `ChatSessionService`, `ChatSessionServiceImpl`
-
-3. **Repository Layer**
-   - Abstraksi akses ke database via Spring Data JPA
-   - Contoh: `ChatMessageRepository`, `ChatSessionRepository`
-
-4. **Model Layer (Entity)**
-   - Representasi entitas dalam database
-   - Contoh: `ChatMessage`, `ChatSession`
-
-5. **DTO Layer**
-   - Data Transfer Object untuk validasi input
-   - Contoh: `SendMessageRequest`, `CreateSessionRequest`, `EditMessageRequest`
-
----
-
 ## 💡 Design Pattern yang Digunakan
 
 ### 🧠 State Pattern
-
-
-## 📦 API Endpoint
-
-### 🔗 Session
-| Method | Endpoint                                                              | Description                                         |
-|--------|-----------------------------------------------------------------------|-----------------------------------------------------|
-| POST   | `/chat/session/create`                                                | Membuat sesi chat antara dua user                   |
-| POST   | `/chat/send`                                                          | Mengirim atau membuat pesan baru                    |
-| GET    | `/chat/session/find?user1={userId1}&user2={userId2}`                  | Mencari sesi antara dua pengguna                    |
-| GET    | `/chat/session/user/{userId}`                                         | Mencari semua sesi chat yang dimiliki seorang user  |
-| GET    | `/chat/session/{sessionId}`                                           | Mendapatkan semua pesan dalam satu sesi chat        |
-| PUT    | `/chat/message/{messageId}`                                           | Mengedit isi pesan berdasarkan `messageId`          |
-| DELETE | `/chat/message/{messageId}`                                           | Menghapus pesan berdasarkan `messageId`             |
