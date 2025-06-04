@@ -62,10 +62,6 @@ public class TokenVerificationService {
                     .expiresIn(expiresIn)
                     .name(name)
                     .build();
-
-        } catch (ExpiredJwtException e) {
-            logger.warn("Token expired: {}", e.getMessage());
-            throw new AuthenticationException("Token has expired");
         } catch (Exception e) {
             logger.error("Token verification failed: {}", e.getMessage(), e);
             throw new AuthenticationException("Error verifying token: " + e.getMessage());
