@@ -102,4 +102,32 @@ class ChatSessionControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data[0].pacilian").value(dummyUserId.toString()));
     }
+
+    @Test
+    void testExtractTokenThrowsExceptionWhenHeaderIsInvalid() throws Exception {
+        CreateSessionRequest request = new CreateSessionRequest();
+        request.setCaregiver(UUID.randomUUID());
+
+        mockMvc.perform(post("/api/chat/session/create")
+                        .header("Authorization", "InvalidToken 1234") 
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest()) 
+                .andExpect(jsonPath("$.message").value("Bad request: Authorization header is missing or invalid"));
+        }
+
+
+    @Test
+    void testExtractTokenThrowsExceptionWhenHeaderIsMissing() throws Exception {
+        CreateSessionRequest request = new CreateSessionRequest();
+        request.setCaregiver(UUID.randomUUID());
+
+        mockMvc.perform(post("/api/chat/session/create")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Bad request: Authorization header is missing or invalid"));
+        }
+
+
 }

@@ -9,4 +9,9 @@ class BeChatApplicationTests {
     @Test
     void contextLoads() {
     }
+
+    @Test
+    void testMainMethodRuns() {
+        BeChatApplication.main(new String[]{});
+    }
 }

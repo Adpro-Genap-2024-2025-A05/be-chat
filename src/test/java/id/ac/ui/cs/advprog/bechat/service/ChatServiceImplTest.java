@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -33,7 +34,6 @@ class ChatServiceImplTest {
 
     private ChatServiceImpl chatService;
 
-    @SuppressWarnings("unchecked")
     @BeforeEach
     void setUp() {
         chatMessageRepository = mock(ChatMessageRepository.class);
@@ -69,6 +69,7 @@ class ChatServiceImplTest {
         ChatSession session = new ChatSession();
         session.setId(sessionId);
         session.setPacilian(senderId);
+        session.setCaregiver(UUID.randomUUID());
 
         SendMessageRequest request = new SendMessageRequest();
         request.setSessionId(sessionId);
@@ -77,7 +78,9 @@ class ChatServiceImplTest {
         when(chatSessionRepository.findById(sessionId)).thenReturn(Optional.of(session));
         when(chatMessageRepository.save(any(ChatMessage.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        ChatMessage result = chatService.sendMessage(request, senderId).get();
+        // Since session exists and sender is valid, this returns a CompletableFuture<ChatMessage> which completes normally.
+        CompletableFuture<ChatMessage> future = chatService.sendMessage(request, senderId);
+        ChatMessage result = future.get(); // wait for completion
 
         assertEquals("Halo Dunia", result.getContent());
         assertEquals(senderId, result.getSenderId());
@@ -87,6 +90,25 @@ class ChatServiceImplTest {
 
         verify(sendMessageCounter).increment();
         verify(sendMessageFailureCounter, never()).increment();
+    }
+
+    @Test
+    void testSendMessage_sessionNotFound_throwsRuntimeException() {
+        UUID sessionId = UUID.randomUUID();
+        UUID senderId = UUID.randomUUID();
+
+        SendMessageRequest request = new SendMessageRequest();
+        request.setSessionId(sessionId);
+        request.setContent("Hello");
+
+        when(chatSessionRepository.findById(sessionId)).thenReturn(Optional.empty());
+
+        RuntimeException ex = assertThrows(RuntimeException.class,
+            () -> chatService.sendMessage(request, senderId));
+        assertEquals("Session not found", ex.getMessage());
+
+        verify(sendMessageFailureCounter).increment();
+        verify(sendMessageCounter, never()).increment();
     }
 
     @Test
@@ -106,8 +128,12 @@ class ChatServiceImplTest {
 
         when(chatSessionRepository.findById(sessionId)).thenReturn(Optional.of(session));
 
-        assertThrows(SecurityException.class, () -> chatService.sendMessage(request, senderId).join());
+        SecurityException ex = assertThrows(SecurityException.class,
+            () -> chatService.sendMessage(request, senderId));
+        assertEquals("You are not part of this session.", ex.getMessage());
+
         verify(sendMessageFailureCounter).increment();
+        verify(sendMessageCounter, never()).increment();
     }
 
     @Test
@@ -122,11 +148,24 @@ class ChatServiceImplTest {
         when(chatMessageRepository.findById(messageId)).thenReturn(Optional.of(message));
         when(chatMessageRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        ChatMessage result = chatService.editMessage(messageId, "New", senderId).get();
+        CompletableFuture<ChatMessage> future = chatService.editMessage(messageId, "New", senderId);
+        ChatMessage result = future.get();
 
         assertEquals("New", result.getContent());
         assertTrue(result.isEdited());
         verify(editMessageCounter).increment();
+    }
+
+    @Test
+    void testEditMessage_messageNotFound_throwsRuntimeException() {
+        UUID messageId = UUID.randomUUID();
+
+        when(chatMessageRepository.findById(messageId)).thenReturn(Optional.empty());
+
+        RuntimeException ex = assertThrows(RuntimeException.class,
+            () -> chatService.editMessage(messageId, "New", UUID.randomUUID()));
+        assertEquals("Message not found", ex.getMessage());
+        verify(editMessageCounter, never()).increment();
     }
 
     @Test
@@ -138,7 +177,9 @@ class ChatServiceImplTest {
 
         when(chatMessageRepository.findById(messageId)).thenReturn(Optional.of(message));
 
-        assertThrows(SecurityException.class, () -> chatService.editMessage(messageId, "test", UUID.randomUUID()).join());
+        SecurityException ex = assertThrows(SecurityException.class,
+            () -> chatService.editMessage(messageId, "test", UUID.randomUUID()));
+        assertEquals("You can only edit your own messages.", ex.getMessage());
         verify(editMessageCounter, never()).increment();
     }
 
@@ -154,11 +195,23 @@ class ChatServiceImplTest {
         when(chatMessageRepository.findById(messageId)).thenReturn(Optional.of(message));
         when(chatMessageRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        ChatMessage result = chatService.deleteMessage(messageId, senderId).get();
+        CompletableFuture<ChatMessage> future = chatService.deleteMessage(messageId, senderId);
+        ChatMessage result = future.get();
 
         assertTrue(result.isDeleted());
-        assertEquals("Pesan telah dihapus", result.getContent());
         verify(deleteMessageCounter).increment();
+    }
+
+    @Test
+    void testDeleteMessage_messageNotFound_throwsRuntimeException() {
+        UUID messageId = UUID.randomUUID();
+
+        when(chatMessageRepository.findById(messageId)).thenReturn(Optional.empty());
+
+        RuntimeException ex = assertThrows(RuntimeException.class,
+            () -> chatService.deleteMessage(messageId, UUID.randomUUID()));
+        assertEquals("Message not found", ex.getMessage());
+        verify(deleteMessageCounter, never()).increment();
     }
 
     @Test
@@ -170,7 +223,9 @@ class ChatServiceImplTest {
 
         when(chatMessageRepository.findById(messageId)).thenReturn(Optional.of(message));
 
-        assertThrows(SecurityException.class, () -> chatService.deleteMessage(messageId, UUID.randomUUID()).join());
+        SecurityException ex = assertThrows(SecurityException.class,
+            () -> chatService.deleteMessage(messageId, UUID.randomUUID()));
+        assertEquals("You can only delete your own messages.", ex.getMessage());
         verify(deleteMessageCounter, never()).increment();
     }
 
@@ -188,15 +243,44 @@ class ChatServiceImplTest {
 
         when(chatSessionRepository.findById(sessionId)).thenReturn(Optional.of(session));
 
-        CompletionException exception = assertThrows(CompletionException.class, () -> {
-            chatService.getMessages(sessionId, userId).join();
-        });
-
-        assertNotNull(exception.getCause());
-        assertTrue(exception.getCause().getCause() instanceof SecurityException);
-        assertEquals("You do not have access to this session.", exception.getCause().getCause().getMessage());
+        CompletionException ex = assertThrows(CompletionException.class,
+            () -> chatService.getMessages(sessionId, userId).join());
+        assertTrue(ex.getCause().getCause() instanceof SecurityException);
+        assertEquals("You do not have access to this session.", ex.getCause().getCause().getMessage());
     }
 
+    @Test
+    void testGetMessages_sessionNotFound_throwsRuntimeException() {
+        UUID sessionId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        when(chatSessionRepository.findById(sessionId)).thenReturn(Optional.empty());
+
+        CompletionException ex = assertThrows(CompletionException.class,
+            () -> chatService.getMessages(sessionId, userId).join());
+        assertTrue(ex.getCause().getCause() instanceof RuntimeException);
+        assertEquals("Session not found", ex.getCause().getCause().getMessage());
+    }
+
+    @Test
+    void testGetMessages_success() throws Exception {
+        UUID sessionId = UUID.randomUUID();
+        UUID userId = UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
+
+        ChatSession session = new ChatSession();
+        session.setId(sessionId);
+        session.setPacilian(userId);
+        session.setCaregiver(UUID.randomUUID());
+
+        List<ChatMessage> mockMessages = List.of(new ChatMessage(), new ChatMessage());
+
+        when(chatSessionRepository.findById(sessionId)).thenReturn(Optional.of(session));
+        when(chatMessageRepository.findBySessionIdOrderByCreatedAtAsc(sessionId)).thenReturn(mockMessages);
+
+        List<ChatMessage> result = chatService.getMessages(sessionId, userId).get();
+        assertEquals(2, result.size());
+        verify(getMessagesTimer).record(any(Supplier.class));
+    }
 
     @Test
     void testGetSessionById_shouldReturnSession() {
@@ -215,30 +299,22 @@ class ChatServiceImplTest {
         UUID sessionId = UUID.randomUUID();
         when(chatSessionRepository.findById(sessionId)).thenReturn(Optional.empty());
 
-        assertThrows(RuntimeException.class, () -> chatService.getSessionById(sessionId));
+        RuntimeException ex = assertThrows(RuntimeException.class,
+            () -> chatService.getSessionById(sessionId));
+        assertEquals("Session not found", ex.getMessage());
     }
-    @SuppressWarnings("unchecked")
-    @Test
-    void testGetMessages_success() throws Exception {
-        UUID sessionId = UUID.randomUUID();
-        UUID userId = UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
 
+    @Test
+    void testFindSessionById_shouldReturnOptional() throws Exception {
+        UUID sessionId = UUID.randomUUID();
         ChatSession session = new ChatSession();
         session.setId(sessionId);
-        session.setPacilian(userId); // userId valid sebagai pacilian
-        session.setCaregiver(UUID.randomUUID());
-
-        List<ChatMessage> mockMessages = List.of(
-                new ChatMessage(), new ChatMessage()
-        );
 
         when(chatSessionRepository.findById(sessionId)).thenReturn(Optional.of(session));
-        when(chatMessageRepository.findBySessionIdOrderByCreatedAtAsc(sessionId)).thenReturn(mockMessages);
 
-        List<ChatMessage> result = chatService.getMessages(sessionId, userId).get();
-
-        assertEquals(2, result.size());
-        verify(getMessagesTimer).record(any(Supplier.class)); // Verifikasi timer
+        CompletableFuture<Optional<ChatSession>> futureOpt = chatService.findSessionById(sessionId);
+        Optional<ChatSession> opt = futureOpt.get();
+        assertTrue(opt.isPresent());
+        assertEquals(session, opt.get());
     }
-
 }

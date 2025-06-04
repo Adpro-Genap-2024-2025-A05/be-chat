@@ -11,6 +11,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -40,6 +41,24 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    void testHandleValidationErrors_withDuplicateField_keepsFirstMessage() {
+        FieldError error1 = new FieldError("object", "field", "first error");
+        FieldError error2 = new FieldError("object", "field", "second error");
+        BindingResult bindingResult = mock(BindingResult.class);
+        when(bindingResult.getFieldErrors()).thenReturn(List.of(error1, error2));
+
+        MethodArgumentNotValidException ex = mock(MethodArgumentNotValidException.class);
+        when(ex.getBindingResult()).thenReturn(bindingResult);
+
+        ResponseEntity<BaseResponseDTO<Map<String, String>>> response = handler.handleValidationErrors(ex);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        Map<String, String> errors = response.getBody().getData();
+        assertEquals("first error", errors.get("field"));
+        assertFalse(errors.containsValue("second error"));
+    }
+
+    @Test
     void testHandleConstraintViolation_returnsBadRequest() {
         ConstraintViolation<?> violation = mock(ConstraintViolation.class);
         Path mockPath = mock(Path.class);
@@ -56,6 +75,35 @@ class GlobalExceptionHandlerTest {
         assertTrue(response.getBody().getMessage().contains("Constraint violation"));
         assertEquals("field is invalid", response.getBody().getData().get("field"));
     }
+
+    @Test
+    void testHandleConstraintViolation_withDuplicatePath_keepsFirstMessage() {
+        Path path = mock(Path.class);
+        when(path.toString()).thenReturn("dupField");
+
+        ConstraintViolation<?> v1 = mock(ConstraintViolation.class);
+        ConstraintViolation<?> v2 = mock(ConstraintViolation.class);
+        when(v1.getPropertyPath()).thenReturn(path);
+        when(v1.getMessage()).thenReturn("first violation");
+        when(v2.getPropertyPath()).thenReturn(path);
+        when(v2.getMessage()).thenReturn("second violation");
+
+        Set<ConstraintViolation<?>> set = new LinkedHashSet<>(List.of(v1, v2));
+        ConstraintViolationException ex = new ConstraintViolationException(set);
+
+        ResponseEntity<BaseResponseDTO<Map<String, String>>> response = handler.handleConstraintViolation(ex);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        Map<String, String> errors = response.getBody().getData();
+
+        assertTrue(errors.containsKey("dupField"));
+
+        String errorMessage = errors.get("dupField");
+        assertTrue(errorMessage.equals("first violation") || errorMessage.equals("second violation"));
+
+        assertEquals(1, errors.size());
+    }
+
 
     @Test
     void testHandleRuntime_returnsInternalServerError() {

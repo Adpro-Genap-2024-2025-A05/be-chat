@@ -24,6 +24,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -172,4 +173,75 @@ public class ChatControllerTest {
                 .andExpect(jsonPath("$.data.caregiverName", is("Dr. Panda")));
     }
 
+    @Test
+    void testGetMessages_WhenEmptyList() throws Exception {
+        UUID sessionId = UUID.randomUUID();
+
+        Mockito.when(chatService.getMessages(eq(sessionId), eq(dummyUserId)))
+                .thenReturn(CompletableFuture.completedFuture(Collections.emptyList()));
+
+        ChatSession dummySession = new ChatSession();
+        dummySession.setId(sessionId);
+        dummySession.setPacilian(dummyUserId);
+        dummySession.setPacilianName("Cleo");
+        dummySession.setCaregiver(UUID.randomUUID());
+        dummySession.setCaregiverName("Dr. Panda");
+        dummySession.setMessages(Collections.emptyList());
+
+        Mockito.when(chatService.findSessionById(eq(sessionId)))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(dummySession)));
+
+        MvcResult result = mockMvc.perform(get("/api/chat/session/{id}", sessionId)
+                        .header("Authorization", "Bearer " + DUMMY_TOKEN))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+
+        mockMvc.perform(asyncDispatch(result))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.messages").isEmpty())
+                .andExpect(jsonPath("$.data.pacilianName", is("Cleo")))
+                .andExpect(jsonPath("$.data.caregiverName", is("Dr. Panda")));
+    }
+    @Test
+    void testGetMessages_WhenSessionNotFound() throws Exception {
+        UUID sessionId = UUID.randomUUID();
+
+        Mockito.when(chatService.getMessages(eq(sessionId), eq(dummyUserId)))
+                .thenReturn(CompletableFuture.completedFuture(Collections.emptyList()));
+
+        Mockito.when(chatService.findSessionById(eq(sessionId)))
+                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+
+        MvcResult result = mockMvc.perform(get("/api/chat/session/{id}", sessionId)
+                        .header("Authorization", "Bearer " + DUMMY_TOKEN))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+
+        mockMvc.perform(asyncDispatch(result))
+       .andExpect(status().isInternalServerError());
+    }
+    @Test
+    void testExtractTokenHeaderMissing() throws Exception {
+        SendMessageRequest request = new SendMessageRequest();
+        request.setSessionId(UUID.randomUUID());
+        request.setContent("Halo");
+
+        mockMvc.perform(post("/api/chat/send")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest()); 
+    }
+
+    @Test
+    void testExtractTokenHeaderInvalid() throws Exception {
+        SendMessageRequest request = new SendMessageRequest();
+        request.setSessionId(UUID.randomUUID());
+        request.setContent("Halo");
+
+        mockMvc.perform(post("/api/chat/send")
+                        .header("Authorization", "InvalidToken 1234")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest()); 
+    }
 }
